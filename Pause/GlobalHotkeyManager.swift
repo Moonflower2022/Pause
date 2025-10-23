@@ -9,11 +9,13 @@ import SwiftUI
 import Carbon.HIToolbox
 
 class GlobalHotkeyManager: ObservableObject {
+    static let shared = GlobalHotkeyManager()
+
     private var hotKeyRef: EventHotKeyRef?
     private var eventHandler: EventHandlerRef?
     var onHotkeyPressed: (() -> Void)?
 
-    init() {
+    private init() {
         setupHotkey()
     }
 
@@ -23,7 +25,7 @@ class GlobalHotkeyManager: ObservableObject {
 
     private func setupHotkey() {
         // Define the hotkey signature and ID
-        var hotKeyID = EventHotKeyID(signature: OSType(0x48545359), id: 1) // 'HTSY' signature
+        let hotKeyID = EventHotKeyID(signature: OSType(0x48545359), id: 1) // 'HTSY' signature
 
         // Control-Command-0
         // Key code for '0' is 29
@@ -50,9 +52,10 @@ class GlobalHotkeyManager: ObservableObject {
         }, 1, &eventType, Unmanaged.passUnretained(self).toOpaque(), &eventHandler)
 
         // Register the hotkey
+        var mutableHotKeyID = hotKeyID
         let status = RegisterEventHotKey(keyCode,
                                         modifiers,
-                                        hotKeyID,
+                                        mutableHotKeyID,
                                         GetApplicationEventTarget(),
                                         0,
                                         &hotKeyRef)
