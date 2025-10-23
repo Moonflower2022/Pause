@@ -16,6 +16,9 @@ struct PauseApp: App {
         GlobalHotkeyManager.shared.onHotkeyPressed = {
             AppState.shared.triggerPauseMode()
         }
+
+        // Initialize the activation scheduler
+        _ = ActivationScheduler.shared
     }
 
     var body: some Scene {

@@ -54,6 +54,11 @@ class AppState: NSObject, ObservableObject, AVAudioPlayerDelegate {
         currentSessionDuration = Settings.shared.getActualPauseDuration()
         timeRemaining = currentSessionDuration
 
+        // Recalculate timers if the setting is enabled
+        if Settings.shared.recalculateOnActivation {
+            ActivationScheduler.shared.recalculateTimers()
+        }
+
         // Ensure a window exists and go fullscreen
         ensureWindowAndFullscreen()
 

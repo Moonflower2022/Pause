@@ -12,6 +12,7 @@ import AVFoundation
 struct ContentView: View {
     @ObservedObject var appState = AppState.shared
     @ObservedObject var settings = Settings.shared
+    @ObservedObject var scheduler = ActivationScheduler.shared
 
     var body: some View {
         ZStack {
@@ -40,8 +41,38 @@ struct ContentView: View {
 
             Divider()
 
-            // Settings Form
-            Form {
+            // Tabbed Settings
+            TabView {
+                sessionSettingsTab
+                    .tabItem {
+                        Label("Session", systemImage: "timer")
+                    }
+
+                activationSettingsTab
+                    .tabItem {
+                        Label("Activation", systemImage: "bell")
+                    }
+            }
+            .padding(.top, 10)
+
+            Divider()
+
+            // Footer
+            VStack(spacing: 4) {
+                Text("Completed sessions: \(settings.completedSessions)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text("Total meditation time: \(formatSessionTime(settings.completedSessionTime))")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.bottom, 20)
+        }
+        .frame(minWidth: 500, minHeight: 550)
+    }
+
+    private var sessionSettingsTab: some View {
+        Form {
                 Section {
                     HStack {
                         Text("Pause Duration")
@@ -104,24 +135,135 @@ struct ContentView: View {
                 } header: {
                     Text("Appearance")
                 }
-            }
-            .formStyle(.grouped)
-            .scrollContentBackground(.hidden)
-
-            Spacer()
-
-            // Footer
-            VStack(spacing: 4) {
-                Text("Completed sessions: \(settings.completedSessions)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Text("Total meditation time: \(formatSessionTime(settings.completedSessionTime))")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            .padding(.bottom, 20)
         }
-        .frame(minWidth: 500, minHeight: 500)
+        .formStyle(.grouped)
+        .scrollContentBackground(.hidden)
+    }
+
+    private var activationSettingsTab: some View {
+        Form {
+            // Repeated activation
+            Section {
+                Toggle("Repeated", isOn: $settings.repeatedEnabled)
+                    .toggleStyle(.switch)
+
+                if settings.repeatedEnabled {
+                    HStack {
+                        Text("Every")
+                            .frame(width: 80, alignment: .leading)
+                        Slider(value: Binding(
+                            get: { Double(settings.repeatedInterval) },
+                            set: { settings.repeatedInterval = Int($0) }
+                        ), in: 5...240, step: 5)
+                        Text("\(settings.repeatedInterval) min")
+                            .frame(width: 70, alignment: .trailing)
+                            .monospacedDigit()
+                    }
+                }
+            } header: {
+                Text("Repeated Activation")
+            } footer: {
+                if settings.repeatedEnabled {
+                    Text("Pause will trigger every \(settings.repeatedInterval) minutes")
+                        .font(.caption)
+                }
+            }
+
+            // Random activation
+            Section {
+                Toggle("Random", isOn: $settings.randomEnabled)
+                    .toggleStyle(.switch)
+
+                if settings.randomEnabled {
+                    HStack {
+                        Text("Minimum")
+                            .frame(width: 80, alignment: .leading)
+                        Slider(value: Binding(
+                            get: { Double(settings.randomMinInterval) },
+                            set: {
+                                let newValue = Int($0)
+                                settings.randomMinInterval = newValue
+                                // Ensure max is always >= min
+                                if settings.randomMaxInterval < newValue {
+                                    settings.randomMaxInterval = newValue
+                                }
+                            }
+                        ), in: 5...240, step: 5)
+                        Text("\(settings.randomMinInterval) min")
+                            .frame(width: 70, alignment: .trailing)
+                            .monospacedDigit()
+                    }
+
+                    HStack {
+                        Text("Maximum")
+                            .frame(width: 80, alignment: .leading)
+                        Slider(value: Binding(
+                            get: { Double(settings.randomMaxInterval) },
+                            set: {
+                                let newValue = Int($0)
+                                settings.randomMaxInterval = newValue
+                                // Ensure min is always <= max
+                                if settings.randomMinInterval > newValue {
+                                    settings.randomMinInterval = newValue
+                                }
+                            }
+                        ), in: 5...240, step: 5)
+                        Text("\(settings.randomMaxInterval) min")
+                            .frame(width: 70, alignment: .trailing)
+                            .monospacedDigit()
+                    }
+                }
+            } header: {
+                Text("Random Activation")
+            } footer: {
+                if settings.randomEnabled {
+                    Text("Pause will trigger at random intervals between \(settings.randomMinInterval)-\(settings.randomMaxInterval) minutes")
+                        .font(.caption)
+                }
+            }
+
+            // Scheduled activation
+            Section {
+                Toggle("Scheduled", isOn: $settings.scheduledEnabled)
+                    .toggleStyle(.switch)
+
+                if settings.scheduledEnabled {
+                    ForEach(settings.scheduledTimes.indices, id: \.self) { index in
+                        DatePicker("Time \(index + 1)", selection: Binding(
+                            get: { settings.scheduledTimes[index] },
+                            set: { settings.scheduledTimes[index] = $0 }
+                        ), displayedComponents: .hourAndMinute)
+                    }
+                    .onDelete { indices in
+                        settings.scheduledTimes.remove(atOffsets: indices)
+                    }
+
+                    Button("Add Time") {
+                        settings.scheduledTimes.append(Date())
+                    }
+                }
+            } header: {
+                Text("Scheduled Activation")
+            } footer: {
+                if settings.scheduledEnabled {
+                    Text("Pause will trigger at the specified times each day")
+                        .font(.caption)
+                }
+            }
+
+            // Recalculation setting
+            Section {
+                Toggle("Recalculate on Activation", isOn: $settings.recalculateOnActivation)
+                    .toggleStyle(.switch)
+            } header: {
+                Text("Timer Behavior")
+            } footer: {
+                Text("When enabled, any activation (manual, repeated, random, or scheduled) will reset and recalculate all pending timers. When disabled, timers continue on their original schedules.")
+                    .font(.caption)
+            }
+        }
+        .formStyle(.grouped)
+        .scrollContentBackground(.hidden)
     }
 
     private func formatSessionTime(_ seconds: Int) -> String {
