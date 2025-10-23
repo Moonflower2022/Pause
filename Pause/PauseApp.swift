@@ -22,6 +22,23 @@ struct PauseApp: App {
         WindowGroup {
             ContentView()
         }
+        .commands {
+            CommandGroup(replacing: .appInfo) {
+                Button("About Pause") {
+                    NSApplication.shared.orderFrontStandardAboutPanel()
+                }
+            }
+        }
+    }
+
+    private func openSettingsWindow() {
+        // Activate app and show main window
+        NSApp.activate(ignoringOtherApps: true)
+        if let window = NSApplication.shared.windows.first(where: { $0.isVisible }) {
+            window.makeKeyAndOrderFront(nil)
+        } else if let window = NSApplication.shared.windows.first {
+            window.makeKeyAndOrderFront(nil)
+        }
     }
 }
 

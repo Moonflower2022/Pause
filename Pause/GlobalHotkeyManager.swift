@@ -52,10 +52,11 @@ class GlobalHotkeyManager: ObservableObject {
         }, 1, &eventType, Unmanaged.passUnretained(self).toOpaque(), &eventHandler)
 
         // Register the hotkey
-        var mutableHotKeyID = hotKeyID
+        // Note: RegisterEventHotKey requires an inout parameter, so we need a var copy
+        var hotKeyIDCopy = hotKeyID
         let status = RegisterEventHotKey(keyCode,
                                         modifiers,
-                                        mutableHotKeyID,
+                                        hotKeyIDCopy,
                                         GetApplicationEventTarget(),
                                         0,
                                         &hotKeyRef)

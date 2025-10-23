@@ -10,8 +10,8 @@ import AppKit
 import AVFoundation
 
 struct ContentView: View {
-    @State private var message: String = "Press Control-Command-0 (works globally!)"
     @ObservedObject var appState = AppState.shared
+    @ObservedObject var settings = Settings.shared
 
     var body: some View {
         ZStack {
@@ -19,40 +19,104 @@ struct ContentView: View {
                 // Fullscreen breathing view
                 breathingView
             } else {
-                // Normal view
-                normalView
-            }
-        }
-        .onChange(of: appState.isPauseMode) { _, newValue in
-            if !newValue {
-                // Pause mode just ended, show completion message
-                message = "Pause session completed ✨"
-                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                    message = "Press Control-Command-0 (works globally!)"
-                }
+                // Settings view
+                settingsView
             }
         }
     }
 
-    private var normalView: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text(message)
-                .font(.headline)
-                .multilineTextAlignment(.center)
-            Text("Triggered \(appState.messageCount) times")
+    private var settingsView: some View {
+        VStack(spacing: 0) {
+            // Header
+            VStack(spacing: 8) {
+                Text("Pause")
+                    .font(.system(size: 32, weight: .light))
+                Text("Press ⌃⌘0 to start")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.top, 30)
+            .padding(.bottom, 20)
+
+            Divider()
+
+            // Settings Form
+            Form {
+                Section {
+                    HStack {
+                        Text("Pause Duration")
+                            .frame(width: 140, alignment: .leading)
+                        Slider(value: Binding(
+                            get: { Double(settings.pauseDuration) },
+                            set: { settings.pauseDuration = Int($0) }
+                        ), in: 10...600, step: 10)
+                        Text("\(settings.pauseDuration / 60):\(String(format: "%02d", settings.pauseDuration % 60))")
+                            .frame(width: 50, alignment: .trailing)
+                            .monospacedDigit()
+                    }
+
+                    HStack {
+                        Text("Time Variance")
+                            .frame(width: 140, alignment: .leading)
+                        Slider(value: Binding(
+                            get: { Double(settings.pauseVariance) },
+                            set: { settings.pauseVariance = Int($0) }
+                        ), in: 0...120, step: 5)
+                        Text("±\(settings.pauseVariance)s")
+                            .frame(width: 50, alignment: .trailing)
+                            .monospacedDigit()
+                    }
+                } header: {
+                    Text("Timing")
+                }
+
+                Section {
+                    Toggle("Enable Music", isOn: $settings.musicEnabled)
+
+                    HStack {
+                        Text("Volume")
+                            .frame(width: 140, alignment: .leading)
+                        Slider(value: $settings.musicVolume, in: 0...1, step: 0.1)
+                        Text("\(Int(settings.musicVolume * 100))%")
+                            .frame(width: 50, alignment: .trailing)
+                            .monospacedDigit()
+                    }
+                    .disabled(!settings.musicEnabled)
+
+                    HStack {
+                        Text("Silence Between")
+                            .frame(width: 140, alignment: .leading)
+                        Slider(value: Binding(
+                            get: { Double(settings.musicRepeatRate) },
+                            set: { settings.musicRepeatRate = Int($0) }
+                        ), in: 0...30, step: 1)
+                        Text("\(settings.musicRepeatRate)s")
+                            .frame(width: 50, alignment: .trailing)
+                            .monospacedDigit()
+                    }
+                    .disabled(!settings.musicEnabled)
+                } header: {
+                    Text("Audio")
+                }
+
+                Section {
+                    Toggle("Show in Menu Bar", isOn: $settings.showInMenuBar)
+                } header: {
+                    Text("Appearance")
+                }
+            }
+            .formStyle(.grouped)
+            .scrollContentBackground(.hidden)
+
+            Spacer()
+
+            // Footer
+            Text("Sessions completed: \(appState.messageCount)")
                 .font(.caption)
                 .foregroundStyle(.secondary)
-            Text("This shortcut works even when the app is in the background")
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal)
+                .padding(.bottom, 20)
         }
-        .padding()
-        .frame(minWidth: 400, minHeight: 200)
+        .frame(minWidth: 500, minHeight: 500)
     }
 
     private var breathingView: some View {
