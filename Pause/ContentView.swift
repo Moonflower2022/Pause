@@ -7,6 +7,7 @@
 
 import SwiftUI
 import AppKit
+import AVFoundation
 
 struct ContentView: View {
     @State private var message: String = "Press Control-Command-0 (works globally!)"
@@ -18,6 +19,16 @@ struct ContentView: View {
     @State private var timeRemaining: Int = 60
     @State private var timer: Timer?
     @State private var eventMonitor: Any?
+    @State private var audioPlayer: AVAudioPlayer?
+
+    // Available ambient sound files
+    private let ambientSounds = [
+        "pad_uplifting",
+        "pad2",
+        "keys",
+        "rain",
+        "walking"
+    ]
 
     var body: some View {
         ZStack {
@@ -123,6 +134,9 @@ struct ContentView: View {
         // Enter fullscreen
         toggleFullscreen(true)
 
+        // Start playing a random ambient sound
+        playRandomAmbientSound()
+
         // Start the countdown timer
         timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
             if timeRemaining > 0 {
@@ -146,6 +160,10 @@ struct ContentView: View {
         // Stop the timer
         timer?.invalidate()
         timer = nil
+
+        // Stop the audio player
+        audioPlayer?.stop()
+        audioPlayer = nil
 
         // Remove event monitor
         if let monitor = eventMonitor {
@@ -182,6 +200,30 @@ struct ContentView: View {
         let mins = seconds / 60
         let secs = seconds % 60
         return String(format: "%d:%02d", mins, secs)
+    }
+
+    private func playRandomAmbientSound() {
+        // Select a random ambient sound
+        guard let randomSound = ambientSounds.randomElement() else { return }
+
+        // Get the URL for the sound file (Xcode copies them to the main bundle Resources)
+        guard let soundURL = Bundle.main.url(forResource: randomSound, withExtension: "mp3") else {
+            print("Could not find audio file: \(randomSound).mp3")
+            return
+        }
+
+        do {
+            // Create and configure audio player
+            audioPlayer = try AVAudioPlayer(contentsOf: soundURL)
+            audioPlayer?.numberOfLoops = -1 // Loop indefinitely
+            audioPlayer?.volume = 0.5 // Set volume to 50%
+            audioPlayer?.prepareToPlay()
+            audioPlayer?.play()
+
+            print("Playing ambient sound: \(randomSound).mp3")
+        } catch {
+            print("Error playing audio: \(error.localizedDescription)")
+        }
     }
 }
 

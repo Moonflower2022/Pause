@@ -45,6 +45,11 @@
 			path = PauseUITests;
 			sourceTree = "<group>";
 		};
+		05F637232EA9F3920011F1E9 /* Resources */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Resources;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -75,6 +80,7 @@
 		05F636DA2EA9EDFE0011F1E9 = {
 			isa = PBXGroup;
 			children = (
+				05F637232EA9F3920011F1E9 /* Resources */,
 				05F636E52EA9EDFE0011F1E9 /* Pause */,
 				05F636F42EA9EDFF0011F1E9 /* PauseTests */,
 				05F636FE2EA9EDFF0011F1E9 /* PauseUITests */,
@@ -109,6 +115,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				05F636E52EA9EDFE0011F1E9 /* Pause */,
+				05F637232EA9F3920011F1E9 /* Resources */,
 			);
 			name = Pause;
 			packageProductDependencies = (
