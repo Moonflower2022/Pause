@@ -413,6 +413,13 @@ struct KeyEventHandlingView: NSViewRepresentable {
     func updateNSView(_ nsView: NSView, context: Context) {
         if let keyView = nsView as? KeyCaptureView {
             keyView.isRecordingBinding = $isRecording
+
+            // Auto-focus the view when recording starts
+            if isRecording {
+                DispatchQueue.main.async {
+                    keyView.window?.makeFirstResponder(keyView)
+                }
+            }
         }
     }
 }
