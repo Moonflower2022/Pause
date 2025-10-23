@@ -17,6 +17,7 @@ struct ContentView: View {
     @State private var isPauseMode: Bool = false
     @State private var timeRemaining: Int = 60
     @State private var timer: Timer?
+    @State private var eventMonitor: Any?
 
     var body: some View {
         ZStack {
@@ -95,15 +96,11 @@ struct ContentView: View {
                 Spacer()
 
                 // Instructions
-                Text("Press ESC to exit early")
+                Text("Press SPACE to exit early")
                     .font(.caption)
                     .foregroundColor(.white.opacity(0.6))
                     .padding(.bottom, 40)
             }
-        }
-        .onKeyPress(.escape) {
-            endPauseMode()
-            return .handled
         }
     }
 
@@ -134,12 +131,27 @@ struct ContentView: View {
                 endPauseMode()
             }
         }
+
+        // Add event monitor for spacebar
+        eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            if event.keyCode == 49 { // 49 is the key code for spacebar
+                endPauseMode()
+                return nil // Consume the event
+            }
+            return event
+        }
     }
 
     private func endPauseMode() {
         // Stop the timer
         timer?.invalidate()
         timer = nil
+
+        // Remove event monitor
+        if let monitor = eventMonitor {
+            NSEvent.removeMonitor(monitor)
+            eventMonitor = nil
+        }
 
         // Exit fullscreen
         toggleFullscreen(false)
