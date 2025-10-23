@@ -22,21 +22,21 @@ class Settings: ObservableObject {
         }
     }
 
-    @Published var musicEnabled: Bool {
+    @Published var soundEnabled: Bool {
         didSet {
-            UserDefaults.standard.set(musicEnabled, forKey: "musicEnabled")
+            UserDefaults.standard.set(soundEnabled, forKey: "soundEnabled")
         }
     }
 
-    @Published var musicVolume: Double {
+    @Published var soundVolume: Double {
         didSet {
-            UserDefaults.standard.set(musicVolume, forKey: "musicVolume")
+            UserDefaults.standard.set(soundVolume, forKey: "soundVolume")
         }
     }
 
-    @Published var musicRepeatRate: Int {
+    @Published var soundRepeatRate: Int {
         didSet {
-            UserDefaults.standard.set(musicRepeatRate, forKey: "musicRepeatRate")
+            UserDefaults.standard.set(soundRepeatRate, forKey: "soundRepeatRate")
         }
     }
 
@@ -50,9 +50,9 @@ class Settings: ObservableObject {
         // Load from UserDefaults with default values
         self.pauseDuration = UserDefaults.standard.object(forKey: "pauseDuration") as? Int ?? 60
         self.pauseVariance = UserDefaults.standard.object(forKey: "pauseVariance") as? Int ?? 0
-        self.musicEnabled = UserDefaults.standard.object(forKey: "musicEnabled") as? Bool ?? true
-        self.musicVolume = UserDefaults.standard.object(forKey: "musicVolume") as? Double ?? 0.5
-        self.musicRepeatRate = UserDefaults.standard.object(forKey: "musicRepeatRate") as? Int ?? 0
+        self.soundEnabled = UserDefaults.standard.object(forKey: "soundEnabled") as? Bool ?? true
+        self.soundVolume = UserDefaults.standard.object(forKey: "soundVolume") as? Double ?? 0.5
+        self.soundRepeatRate = UserDefaults.standard.object(forKey: "soundRepeatRate") as? Int ?? 0
         self.showInMenuBar = UserDefaults.standard.object(forKey: "showInMenuBar") as? Bool ?? false
     }
 

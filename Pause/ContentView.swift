@@ -71,30 +71,30 @@ struct ContentView: View {
                 }
 
                 Section {
-                    Toggle("Enable Music", isOn: $settings.musicEnabled)
+                    Toggle("Enable Sound", isOn: $settings.soundEnabled)
 
                     HStack {
                         Text("Volume")
                             .frame(width: 140, alignment: .leading)
-                        Slider(value: $settings.musicVolume, in: 0...1, step: 0.1)
-                        Text("\(Int(settings.musicVolume * 100))%")
+                        Slider(value: $settings.soundVolume, in: 0...1, step: 0.1)
+                        Text("\(Int(settings.soundVolume * 100))%")
                             .frame(width: 50, alignment: .trailing)
                             .monospacedDigit()
                     }
-                    .disabled(!settings.musicEnabled)
+                    .disabled(!settings.soundEnabled)
 
                     HStack {
                         Text("Silence Between")
                             .frame(width: 140, alignment: .leading)
                         Slider(value: Binding(
-                            get: { Double(settings.musicRepeatRate) },
-                            set: { settings.musicRepeatRate = Int($0) }
+                            get: { Double(settings.soundRepeatRate) },
+                            set: { settings.soundRepeatRate = Int($0) }
                         ), in: 0...30, step: 1)
-                        Text("\(settings.musicRepeatRate)s")
+                        Text("\(settings.soundRepeatRate)s")
                             .frame(width: 50, alignment: .trailing)
                             .monospacedDigit()
                     }
-                    .disabled(!settings.musicEnabled)
+                    .disabled(!settings.soundEnabled)
                 } header: {
                     Text("Audio")
                 }

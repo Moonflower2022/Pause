@@ -20,7 +20,7 @@ class AppState: NSObject, ObservableObject, AVAudioPlayerDelegate {
     var audioPlayer: AVAudioPlayer?
     var eventMonitor: Any?
     var createdWindows: [NSWindow] = []  // Keep strong references to windows we create
-    var musicRepeatTimer: Timer?
+    var soundRepeatTimer: Timer?
 
     // Available ambient sound files
     let ambientSounds = [
@@ -56,7 +56,7 @@ class AppState: NSObject, ObservableObject, AVAudioPlayerDelegate {
         ensureWindowAndFullscreen()
 
         // Start playing a random ambient sound if enabled
-        if Settings.shared.musicEnabled {
+        if Settings.shared.soundEnabled {
             playRandomAmbientSound()
         }
 
@@ -84,9 +84,9 @@ class AppState: NSObject, ObservableObject, AVAudioPlayerDelegate {
         timer?.invalidate()
         timer = nil
 
-        // Stop the music repeat timer
-        musicRepeatTimer?.invalidate()
-        musicRepeatTimer = nil
+        // Stop the sound repeat timer
+        soundRepeatTimer?.invalidate()
+        soundRepeatTimer = nil
 
         // Stop the audio player
         audioPlayer?.stop()
@@ -198,9 +198,9 @@ class AppState: NSObject, ObservableObject, AVAudioPlayerDelegate {
             // Create and configure audio player
             audioPlayer = try AVAudioPlayer(contentsOf: soundURL)
             audioPlayer?.delegate = self
-            audioPlayer?.volume = Float(Settings.shared.musicVolume)
+            audioPlayer?.volume = Float(Settings.shared.soundVolume)
 
-            let repeatRate = Settings.shared.musicRepeatRate
+            let repeatRate = Settings.shared.soundRepeatRate
             if repeatRate > 0 {
                 // Play once, then wait for repeat rate before playing again
                 audioPlayer?.numberOfLoops = 0
@@ -212,7 +212,7 @@ class AppState: NSObject, ObservableObject, AVAudioPlayerDelegate {
             audioPlayer?.prepareToPlay()
             audioPlayer?.play()
 
-            print("Playing ambient sound: \(randomSound).mp3 (volume: \(Int(Settings.shared.musicVolume * 100))%)")
+            print("Playing ambient sound: \(randomSound).mp3 (volume: \(Int(Settings.shared.soundVolume * 100))%)")
         } catch {
             print("Error playing audio: \(error.localizedDescription)")
         }
@@ -220,13 +220,13 @@ class AppState: NSObject, ObservableObject, AVAudioPlayerDelegate {
 
     // AVAudioPlayerDelegate method - called when audio finishes playing
     func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
-        guard isPauseMode, Settings.shared.musicEnabled else { return }
+        guard isPauseMode, Settings.shared.soundEnabled else { return }
 
-        let repeatRate = Settings.shared.musicRepeatRate
+        let repeatRate = Settings.shared.soundRepeatRate
         if repeatRate > 0 {
             // Wait for the specified silence duration before playing next track
             print("Waiting \(repeatRate)s before next track...")
-            musicRepeatTimer = Timer.scheduledTimer(withTimeInterval: TimeInterval(repeatRate), repeats: false) { [weak self] _ in
+            soundRepeatTimer = Timer.scheduledTimer(withTimeInterval: TimeInterval(repeatRate), repeats: false) { [weak self] _ in
                 self?.playRandomAmbientSound()
             }
         } else {
