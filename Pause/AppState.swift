@@ -14,13 +14,13 @@ class AppState: NSObject, ObservableObject, AVAudioPlayerDelegate {
 
     @Published var isPauseMode: Bool = false
     @Published var timeRemaining: Int = 60
-    @Published var messageCount: Int = 0
 
     var timer: Timer?
     var audioPlayer: AVAudioPlayer?
     var eventMonitor: Any?
     var createdWindows: [NSWindow] = []  // Keep strong references to windows we create
     var soundRepeatTimer: Timer?
+    var currentSessionDuration: Int = 0  // Track the duration of the current session
 
     // Available ambient sound files
     let ambientSounds = [
@@ -39,8 +39,8 @@ class AppState: NSObject, ObservableObject, AVAudioPlayerDelegate {
 
     func triggerPauseMode() {
         if isPauseMode {
-            // If already in pause mode, exit it
-            endPauseMode()
+            // If already in pause mode, exit it early (not completed)
+            endPauseMode(completed: false)
         } else {
             // Enter pause mode
             startPauseMode()
@@ -48,11 +48,11 @@ class AppState: NSObject, ObservableObject, AVAudioPlayerDelegate {
     }
 
     func startPauseMode() {
-        messageCount += 1
         isPauseMode = true
 
         // Use settings for duration with variance
-        timeRemaining = Settings.shared.getActualPauseDuration()
+        currentSessionDuration = Settings.shared.getActualPauseDuration()
+        timeRemaining = currentSessionDuration
 
         // Ensure a window exists and go fullscreen
         ensureWindowAndFullscreen()
@@ -67,21 +67,31 @@ class AppState: NSObject, ObservableObject, AVAudioPlayerDelegate {
             if self.timeRemaining > 0 {
                 self.timeRemaining -= 1
             } else {
-                self.endPauseMode()
+                // Timer completed naturally - this is a completed session
+                self.endPauseMode(completed: true)
             }
         }
 
         // Add event monitor for spacebar
         eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
             if event.keyCode == 49 { // 49 is the key code for spacebar
-                self.endPauseMode()
+                self.endPauseMode(completed: false)
                 return nil // Consume the event
             }
             return event
         }
     }
 
-    func endPauseMode() {
+    func endPauseMode(completed: Bool) {
+        // If session was completed (timer reached 0), track it
+        if completed {
+            Settings.shared.completedSessions += 1
+            Settings.shared.completedSessionTime += currentSessionDuration
+            print("Session completed! Total sessions: \(Settings.shared.completedSessions), Total time: \(Settings.shared.completedSessionTime)s")
+        } else {
+            print("Session ended early (not counted)")
+        }
+
         // Stop the timer
         timer?.invalidate()
         timer = nil
@@ -105,6 +115,9 @@ class AppState: NSObject, ObservableObject, AVAudioPlayerDelegate {
 
         // Exit pause mode
         isPauseMode = false
+
+        // Reset current session duration
+        currentSessionDuration = 0
     }
 
     private func ensureWindowAndFullscreen() {

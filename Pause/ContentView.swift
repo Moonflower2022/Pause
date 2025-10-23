@@ -111,12 +111,31 @@ struct ContentView: View {
             Spacer()
 
             // Footer
-            Text("Sessions completed: \(appState.messageCount)")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .padding(.bottom, 20)
+            VStack(spacing: 4) {
+                Text("Completed sessions: \(settings.completedSessions)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text("Total meditation time: \(formatSessionTime(settings.completedSessionTime))")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.bottom, 20)
         }
         .frame(minWidth: 500, minHeight: 500)
+    }
+
+    private func formatSessionTime(_ seconds: Int) -> String {
+        let hours = seconds / 3600
+        let minutes = (seconds % 3600) / 60
+        let secs = seconds % 60
+
+        if hours > 0 {
+            return String(format: "%dh %dm %ds", hours, minutes, secs)
+        } else if minutes > 0 {
+            return String(format: "%dm %ds", minutes, secs)
+        } else {
+            return String(format: "%ds", secs)
+        }
     }
 
     private var breathingView: some View {

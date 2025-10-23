@@ -46,6 +46,18 @@ class Settings: ObservableObject {
         }
     }
 
+    @Published var completedSessions: Int {
+        didSet {
+            UserDefaults.standard.set(completedSessions, forKey: "completedSessions")
+        }
+    }
+
+    @Published var completedSessionTime: Int {
+        didSet {
+            UserDefaults.standard.set(completedSessionTime, forKey: "completedSessionTime")
+        }
+    }
+
     private init() {
         // Load from UserDefaults with default values
         self.pauseDuration = UserDefaults.standard.object(forKey: "pauseDuration") as? Int ?? 60
@@ -54,6 +66,8 @@ class Settings: ObservableObject {
         self.soundVolume = UserDefaults.standard.object(forKey: "soundVolume") as? Double ?? 0.5
         self.soundRepeatRate = UserDefaults.standard.object(forKey: "soundRepeatRate") as? Int ?? 0
         self.showInMenuBar = UserDefaults.standard.object(forKey: "showInMenuBar") as? Bool ?? false
+        self.completedSessions = UserDefaults.standard.object(forKey: "completedSessions") as? Int ?? 0
+        self.completedSessionTime = UserDefaults.standard.object(forKey: "completedSessionTime") as? Int ?? 0
     }
 
     func getActualPauseDuration() -> Int {
