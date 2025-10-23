@@ -46,12 +46,46 @@ xcodebuild -project Pause.xcodeproj -scheme Pause -configuration Debug
 
 ## Architecture
 
+### Application Overview
+Pause is a meditation/mindfulness app that triggers fullscreen breathing sessions either manually (via global hotkey) or automatically based on schedules. The app uses a singleton-based architecture with SwiftUI for the UI layer.
+
+### Core Components
+
+#### State Management (Singleton Pattern)
+All state is managed through three shared singletons:
+- **`AppState.shared`**: Controls pause mode state, timer logic, audio playback, and fullscreen window management
+- **`Settings.shared`**: Manages user preferences backed by UserDefaults with `@Published` properties
+- **`ActivationScheduler.shared`**: Handles three independent activation modes (repeated, random, scheduled)
+- **`GlobalHotkeyManager.shared`**: Registers Control-Command-0 hotkey using Carbon APIs
+
+#### Key Files
+- **`PauseApp.swift`**: App entry point with `@NSApplicationDelegateAdaptor` to prevent termination when windows close
+- **`ContentView.swift`**: SwiftUI view that switches between settings UI and fullscreen breathing view based on `AppState.isPauseMode`
+- **`AppState.swift`**: Core session logic including timer management, audio playback (AVAudioPlayer), fullscreen transitions, and session tracking
+- **`Settings.swift`**: Persistence layer using `@Published` properties that auto-save to UserDefaults on change
+- **`ActivationScheduler.swift`**: Timer orchestration for three activation modes that can run simultaneously
+- **`GlobalHotkeyManager.swift`**: Carbon-based global hotkey registration (uses legacy Carbon HIToolbox APIs)
+
+#### Application Lifecycle
+1. App initializes `GlobalHotkeyManager` and `ActivationScheduler` in `PauseApp.init()`
+2. `AppDelegate` prevents app termination when windows close (allows background hotkey operation)
+3. Hotkey or timer triggers `AppState.triggerPauseMode()`
+4. If not in pause mode: creates/finds window, enters fullscreen, starts timer and optional audio
+5. If already in pause mode: exits early (spacebar also exits early)
+6. Session completion increments `Settings.completedSessions` and `completedSessionTime`
+
+#### Activation Modes (Independent, Can Run Simultaneously)
+- **Repeated**: Fires every N minutes using a repeating Timer
+- **Random**: Fires at random intervals within min-max range, reschedules itself after each trigger
+- **Scheduled**: Fires at specific times of day, automatically reschedules for next day
+
 ### Project Structure
 - **Pause/**: Main application target containing app source code
-  - `PauseApp.swift`: App entry point using `@main` SwiftUI App lifecycle
-  - `ContentView.swift`: Root view of the application
+  - Core files: `PauseApp.swift`, `ContentView.swift`, `AppState.swift`, `Settings.swift`
+  - Managers: `GlobalHotkeyManager.swift`, `ActivationScheduler.swift`
   - `Pause.entitlements`: App sandbox entitlements configuration
   - `Assets.xcassets/`: App icons and visual assets
+  - Audio files: `pad.mp3`, `pad2.mp3`, `keys.mp3`, `rain.mp3`, `walking.mp3`, `birds.mp3`, `waves.mp3`
 
 - **PauseTests/**: Unit test target using Swift Testing framework
   - Tests are written using the modern `@Test` macro (not XCTest)
