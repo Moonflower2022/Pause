@@ -24,11 +24,13 @@ class AppState: NSObject, ObservableObject, AVAudioPlayerDelegate {
 
     // Available ambient sound files
     let ambientSounds = [
-        "pad_uplifting",
+        "pad",
         "pad2",
         "keys",
         "rain",
-        "walking"
+        "walking",
+        "birds",
+        "waves"
     ]
 
     private override init() {
