@@ -17,6 +17,16 @@ class GlobalHotkeyManager: ObservableObject {
 
     private init() {
         setupHotkey()
+
+        // Listen for settings changes to re-register hotkey
+        NotificationCenter.default.addObserver(
+            forName: UserDefaults.didChangeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            // Re-register hotkey when settings change
+            self?.reregisterHotkey()
+        }
     }
 
     deinit {
@@ -27,10 +37,10 @@ class GlobalHotkeyManager: ObservableObject {
         // Define the hotkey signature and ID
         let hotKeyID = EventHotKeyID(signature: OSType(0x48545359), id: 1) // 'HTSY' signature
 
-        // Control-Command-0
-        // Key code for '0' is 29
-        let keyCode: UInt32 = 29
-        let modifiers: UInt32 = UInt32(controlKey | cmdKey)
+        // Get hotkey settings from Settings
+        let settings = Settings.shared
+        let keyCode = settings.hotkeyKeyCode
+        let modifiers = settings.hotkeyModifiers
 
         // Event type specification
         var eventType = EventTypeSpec(eventClass: OSType(kEventClassKeyboard),
@@ -64,8 +74,14 @@ class GlobalHotkeyManager: ObservableObject {
         if status != noErr {
             print("Failed to register global hotkey: \(status)")
         } else {
-            print("Global hotkey registered successfully: Control-Command-0")
+            print("Global hotkey registered successfully: \(Settings.shared.getHotkeyString())")
         }
+    }
+
+    // Re-register hotkey with new settings
+    func reregisterHotkey() {
+        cleanup()
+        setupHotkey()
     }
 
     private func cleanup() {
