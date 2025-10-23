@@ -43,21 +43,24 @@ struct ContentView: View {
             Divider()
 
             // Tabbed Settings
-            TabView {
+            TabView(selection: $settings.selectedTab) {
                 sessionSettingsTab
                     .tabItem {
                         Label("General", systemImage: "timer")
                     }
+                    .tag(0)
 
                 activationSettingsTab
                     .tabItem {
                         Label("Activation", systemImage: "bell")
                     }
+                    .tag(1)
 
                 shortcutsSettingsTab
                     .tabItem {
                         Label("Shortcuts", systemImage: "command")
                     }
+                    .tag(2)
             }
             .padding(.top, 10)
 

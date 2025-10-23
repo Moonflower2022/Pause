@@ -123,6 +123,13 @@ class Settings: ObservableObject {
         }
     }
 
+    // UI State
+    @Published var selectedTab: Int {
+        didSet {
+            UserDefaults.standard.set(selectedTab, forKey: "selectedTab")
+        }
+    }
+
     private init() {
         // Load from UserDefaults with default values
         self.pauseDuration = UserDefaults.standard.object(forKey: "pauseDuration") as? Int ?? 60
@@ -157,6 +164,9 @@ class Settings: ObservableObject {
         let defaultKeyCode: UInt32 = 29 // Key code for '0'
         self.hotkeyModifiers = UserDefaults.standard.object(forKey: "hotkeyModifiers") as? UInt32 ?? defaultModifiers
         self.hotkeyKeyCode = UserDefaults.standard.object(forKey: "hotkeyKeyCode") as? UInt32 ?? defaultKeyCode
+
+        // Load UI state
+        self.selectedTab = UserDefaults.standard.object(forKey: "selectedTab") as? Int ?? 0
     }
 
     func getActualPauseDuration() -> Int {
