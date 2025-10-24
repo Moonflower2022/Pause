@@ -30,7 +30,7 @@ struct ContentView: View {
     private var settingsView: some View {
         VStack(spacing: 0) {
             // Header - three column layout
-            HStack(alignment: .center, spacing: 20) {
+            HStack(alignment: .center, spacing: 40) {
                 // Left: Session stats
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Sessions: \(settings.completedSessions)")
@@ -40,7 +40,7 @@ struct ContentView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(minWidth: 120)
 
                 // Center: App title
                 VStack(spacing: 8) {
@@ -50,15 +50,13 @@ struct ContentView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-                .frame(maxWidth: .infinity)
 
                 // Right: Next activation countdown
                 nextActivationView
-                    .frame(maxWidth: .infinity, alignment: .trailing)
+                    .frame(minWidth: 120)
             }
             .padding(.top, 30)
             .padding(.bottom, 20)
-            .padding(.horizontal, 20)
 
             Divider()
 
