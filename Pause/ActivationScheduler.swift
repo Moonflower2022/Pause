@@ -138,7 +138,7 @@ class ActivationScheduler: ObservableObject {
         var earliestDate: Date?
 
         for scheduledTime in scheduledTimes {
-            if let (timer, fireDate) = createDailyTimer(for: scheduledTime) {
+            if let (timer, fireDate) = createDailyTimer(for: scheduledTime.date) {
                 scheduledTimers.append(timer)
 
                 // Track the earliest scheduled activation
@@ -213,7 +213,7 @@ class ActivationScheduler: ObservableObject {
         var earliestDate: Date?
 
         for scheduledTime in scheduledTimes {
-            let components = calendar.dateComponents([.hour, .minute], from: scheduledTime)
+            let components = calendar.dateComponents([.hour, .minute], from: scheduledTime.date)
             guard let hour = components.hour, let minute = components.minute else { continue }
 
             var todayComponents = calendar.dateComponents([.year, .month, .day], from: now)

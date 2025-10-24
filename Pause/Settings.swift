@@ -8,8 +8,33 @@
 import Foundation
 import Carbon.HIToolbox
 
+struct ScheduledTime: Codable, Identifiable, Equatable {
+    var id: UUID
+    var date: Date
+    var name: String
+
+    init(id: UUID = UUID(), date: Date, name: String = "") {
+        self.id = id
+        self.date = date
+        self.name = name.isEmpty ? "Time \(DateFormatter.shortTimeFormatter.string(from: date))" : name
+    }
+}
+
+extension DateFormatter {
+    static let shortTimeFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.timeStyle = .short
+        return formatter
+    }()
+}
+
 class Settings: ObservableObject {
     static let shared = Settings()
+
+    // Undo/Redo stacks for scheduled times
+    private var undoStack: [[ScheduledTime]] = []
+    private var redoStack: [[ScheduledTime]] = []
+    private let maxUndoStackSize = 50
 
     @Published var pauseDuration: Int {
         didSet {
@@ -102,13 +127,57 @@ class Settings: ObservableObject {
         }
     }
 
-    @Published var scheduledTimes: [Date] {
+    @Published var scheduledTimes: [ScheduledTime] {
         didSet {
             if let encoded = try? JSONEncoder().encode(scheduledTimes) {
                 UserDefaults.standard.set(encoded, forKey: "scheduledTimes")
             }
             ActivationScheduler.shared.updateScheduledTimers()
         }
+    }
+
+    // Methods for undo/redo
+    func saveUndoState() {
+        undoStack.append(scheduledTimes)
+        if undoStack.count > maxUndoStackSize {
+            undoStack.removeFirst()
+        }
+        redoStack.removeAll() // Clear redo stack when new action is performed
+    }
+
+    func undo() {
+        guard !undoStack.isEmpty else { return }
+        redoStack.append(scheduledTimes)
+        scheduledTimes = undoStack.removeLast()
+    }
+
+    func redo() {
+        guard !redoStack.isEmpty else { return }
+        undoStack.append(scheduledTimes)
+        scheduledTimes = redoStack.removeLast()
+    }
+
+    var canUndo: Bool {
+        !undoStack.isEmpty
+    }
+
+    var canRedo: Bool {
+        !redoStack.isEmpty
+    }
+
+    func deleteScheduledTime(at offsets: IndexSet) {
+        saveUndoState()
+        scheduledTimes.remove(atOffsets: offsets)
+    }
+
+    func deleteScheduledTime(id: UUID) {
+        saveUndoState()
+        scheduledTimes.removeAll { $0.id == id }
+    }
+
+    func clearAllScheduledTimes() {
+        saveUndoState()
+        scheduledTimes.removeAll()
     }
 
     @Published var recalculateOnActivation: Bool {
@@ -158,8 +227,12 @@ class Settings: ObservableObject {
 
         self.scheduledEnabled = UserDefaults.standard.object(forKey: "scheduledEnabled") as? Bool ?? false
         if let data = UserDefaults.standard.data(forKey: "scheduledTimes"),
-           let decoded = try? JSONDecoder().decode([Date].self, from: data) {
+           let decoded = try? JSONDecoder().decode([ScheduledTime].self, from: data) {
             self.scheduledTimes = decoded
+        } else if let data = UserDefaults.standard.data(forKey: "scheduledTimes"),
+                  let oldDates = try? JSONDecoder().decode([Date].self, from: data) {
+            // Migration from old [Date] format to new [ScheduledTime] format
+            self.scheduledTimes = oldDates.map { ScheduledTime(date: $0) }
         } else {
             self.scheduledTimes = []
         }

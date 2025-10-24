@@ -243,18 +243,63 @@ struct ContentView: View {
                     .toggleStyle(.switch)
 
                 if settings.scheduledEnabled {
-                    ForEach(settings.scheduledTimes.indices, id: \.self) { index in
-                        DatePicker("Time \(index + 1)", selection: Binding(
-                            get: { settings.scheduledTimes[index] },
-                            set: { settings.scheduledTimes[index] = $0 }
-                        ), displayedComponents: .hourAndMinute)
+                    ForEach($settings.scheduledTimes) { $scheduledTime in
+                        HStack(alignment: .center, spacing: 8) {
+                            TextField("", text: $scheduledTime.name)
+                                .textFieldStyle(.roundedBorder)
+                                .frame(minWidth: 80, maxWidth: 200)
+                                .multilineTextAlignment(.leading)
+
+                            Spacer()
+
+                            DatePicker("", selection: $scheduledTime.date, displayedComponents: .hourAndMinute)
+                                .labelsHidden()
+
+                            Button(action: {
+                                settings.deleteScheduledTime(id: scheduledTime.id)
+                            }) {
+                                Image(systemName: "trash")
+                                    .foregroundColor(.red)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                        .alignmentGuide(.leading) { d in d[.leading] }
                     }
                     .onDelete { indices in
-                        settings.scheduledTimes.remove(atOffsets: indices)
+                        settings.deleteScheduledTime(at: indices)
                     }
 
-                    Button("Add Time") {
-                        settings.scheduledTimes.append(Date())
+                    HStack {
+                        Button("Add Time") {
+                            settings.scheduledTimes.append(ScheduledTime(date: Date()))
+                        }
+
+                        Spacer()
+
+                        Button("Clear All") {
+                            settings.clearAllScheduledTimes()
+                        }
+                        .disabled(settings.scheduledTimes.isEmpty)
+
+                        Button(action: {
+                            settings.undo()
+                        }) {
+                            Image(systemName: "arrow.uturn.backward")
+                        }
+                        .disabled(!settings.canUndo)
+                        .buttonStyle(.plain)
+                        .help("Undo (⌘Z)")
+                        .keyboardShortcut("z", modifiers: .command)
+
+                        Button(action: {
+                            settings.redo()
+                        }) {
+                            Image(systemName: "arrow.uturn.forward")
+                        }
+                        .disabled(!settings.canRedo)
+                        .buttonStyle(.plain)
+                        .help("Redo (⌘⇧Z)")
+                        .keyboardShortcut("z", modifiers: [.command, .shift])
                     }
                 }
             } header: {
@@ -367,6 +412,78 @@ struct ContentView: View {
         let mins = seconds / 60
         let secs = seconds % 60
         return String(format: "%d:%02d", mins, secs)
+    }
+}
+
+// Editable label that shows as text until double-clicked
+struct EditableLabel: View {
+    @Binding var text: String
+    @State private var isEditing = false
+    @FocusState private var isFocused: Bool
+
+    var body: some View {
+        if isEditing {
+            TextField("Name", text: $text, onCommit: {
+                isEditing = false
+            })
+            .textFieldStyle(.roundedBorder)
+            .focused($isFocused)
+            .onAppear {
+                isFocused = true
+            }
+            .frame(maxWidth: 200)
+        } else {
+            EditableLabelNSView(text: text, isEditing: $isEditing)
+                .frame(height: 22)
+        }
+    }
+}
+
+// NSView wrapper to handle double-click without text selection interfering
+struct EditableLabelNSView: NSViewRepresentable {
+    let text: String
+    @Binding var isEditing: Bool
+
+    func makeNSView(context: Context) -> NSTextField {
+        let textField = ClickableTextField()
+        textField.isEditable = false
+        textField.isBordered = false
+        textField.backgroundColor = NSColor.secondarySystemFill
+        textField.drawsBackground = true
+        textField.isSelectable = true
+        textField.alignment = .left
+        textField.font = NSFont.systemFont(ofSize: NSFont.systemFontSize)
+        textField.cell?.lineBreakMode = .byTruncatingTail
+
+        // Padding
+        textField.cell?.wraps = false
+        textField.cell?.isScrollable = true
+
+        // Set the double-click handler
+        if let clickableField = textField as? ClickableTextField {
+            clickableField.onDoubleClick = {
+                isEditing = true
+            }
+        }
+
+        return textField
+    }
+
+    func updateNSView(_ nsView: NSTextField, context: Context) {
+        nsView.stringValue = text
+    }
+}
+
+// Custom NSTextField that handles double-click
+class ClickableTextField: NSTextField {
+    var onDoubleClick: (() -> Void)?
+
+    override func mouseDown(with event: NSEvent) {
+        if event.clickCount == 2 {
+            onDoubleClick?()
+        } else {
+            super.mouseDown(with: event)
+        }
     }
 }
 
