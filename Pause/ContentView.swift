@@ -276,7 +276,7 @@ struct ContentView: View {
                 if settings.scheduledEnabled {
                     ForEach($settings.scheduledTimes) { $scheduledTime in
                         HStack(alignment: .center, spacing: 8) {
-                            TextField("", text: $scheduledTime.name)
+                            TextField("Label:", text: $scheduledTime.name)
                                 .textFieldStyle(.roundedBorder)
                                 .frame(minWidth: 80, maxWidth: 200)
                                 .multilineTextAlignment(.leading)
