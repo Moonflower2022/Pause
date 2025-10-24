@@ -123,6 +123,20 @@ struct ContentView: View {
                 } header: {
                     Text("Timing")
                 }
+
+                Section {
+                    HStack {
+                        Text("Display Text")
+                            .frame(width: 140, alignment: .leading)
+                        TextField("", text: $settings.sessionDisplayText)
+                            .textFieldStyle(.roundedBorder)
+                    }
+                } header: {
+                    Text("Appearance")
+                } footer: {
+                    Text("Text displayed during meditation sessions. Scheduled activations will show their label instead.")
+                        .font(.caption)
+                }
         }
         .formStyle(.grouped)
         .scrollContentBackground(.hidden)
@@ -428,7 +442,7 @@ struct ContentView: View {
                 Spacer()
 
                 // Main message
-                Text("Just Breathe")
+                Text(appState.currentDisplayText)
                     .font(.system(size: 72, weight: .light, design: .rounded))
                     .foregroundColor(.white)
 

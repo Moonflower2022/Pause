@@ -16,7 +16,7 @@ struct ScheduledTime: Codable, Identifiable, Equatable {
     init(id: UUID = UUID(), date: Date, name: String = "") {
         self.id = id
         self.date = date
-        self.name = name.isEmpty ? "Time \(DateFormatter.shortTimeFormatter.string(from: date))" : name
+        self.name = name.isEmpty ? "Just Breathe" : name
     }
 }
 
@@ -93,6 +93,12 @@ class Settings: ObservableObject {
     @Published var showInMenuBar: Bool {
         didSet {
             UserDefaults.standard.set(showInMenuBar, forKey: "showInMenuBar")
+        }
+    }
+
+    @Published var sessionDisplayText: String {
+        didSet {
+            UserDefaults.standard.set(sessionDisplayText, forKey: "sessionDisplayText")
         }
     }
 
@@ -242,6 +248,7 @@ class Settings: ObservableObject {
         self.endSoundEnabled = UserDefaults.standard.object(forKey: "endSoundEnabled") as? Bool ?? true
         self.endSoundVolume = UserDefaults.standard.object(forKey: "endSoundVolume") as? Double ?? 1.0
         self.showInMenuBar = UserDefaults.standard.object(forKey: "showInMenuBar") as? Bool ?? false
+        self.sessionDisplayText = UserDefaults.standard.object(forKey: "sessionDisplayText") as? String ?? "Just Breathe"
         self.completedSessions = UserDefaults.standard.object(forKey: "completedSessions") as? Int ?? 0
         self.completedSessionTime = UserDefaults.standard.object(forKey: "completedSessionTime") as? Int ?? 0
 

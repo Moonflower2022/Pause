@@ -14,6 +14,7 @@ class AppState: NSObject, ObservableObject, AVAudioPlayerDelegate {
 
     @Published var isPauseMode: Bool = false
     @Published var timeRemaining: Int = 60
+    @Published var currentDisplayText: String = "Just Breathe"
 
     var timer: Timer?
     var audioPlayer: AVAudioPlayer?
@@ -39,18 +40,21 @@ class AppState: NSObject, ObservableObject, AVAudioPlayerDelegate {
         super.init()
     }
 
-    func triggerPauseMode() {
+    func triggerPauseMode(displayText: String? = nil) {
         if isPauseMode {
             // If already in pause mode, exit it early (not completed)
             endPauseMode(completed: false)
         } else {
             // Enter pause mode
-            startPauseMode()
+            startPauseMode(displayText: displayText)
         }
     }
 
-    func startPauseMode() {
+    func startPauseMode(displayText: String? = nil) {
         isPauseMode = true
+
+        // Set the display text (use provided text, or default from settings)
+        currentDisplayText = displayText ?? Settings.shared.sessionDisplayText
 
         // Use settings for duration with variance
         currentSessionDuration = Settings.shared.getActualPauseDuration()

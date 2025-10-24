@@ -136,7 +136,7 @@ class ActivationScheduler: ObservableObject {
         var earliestDate: Date?
 
         for scheduledTime in scheduledTimes {
-            if let (timer, fireDate) = createDailyTimer(for: scheduledTime.date) {
+            if let (timer, fireDate) = createDailyTimer(for: scheduledTime) {
                 scheduledTimers.append(timer)
 
                 // Track the earliest scheduled activation
@@ -155,12 +155,12 @@ class ActivationScheduler: ObservableObject {
         }
     }
 
-    private func createDailyTimer(for time: Date) -> (Timer, Date)? {
+    private func createDailyTimer(for scheduledTime: ScheduledTime) -> (Timer, Date)? {
         let calendar = Calendar.current
         let now = Date()
 
         // Extract hour and minute from the scheduled time
-        let components = calendar.dateComponents([.hour, .minute], from: time)
+        let components = calendar.dateComponents([.hour, .minute], from: scheduledTime.date)
 
         guard let hour = components.hour, let minute = components.minute else {
             return nil
@@ -186,11 +186,11 @@ class ActivationScheduler: ObservableObject {
         print("Scheduling timer for \(hour):\(String(format: "%02d", minute)) - fires in \(Int(timeInterval/60)) minutes")
 
         let timer = Timer.scheduledTimer(withTimeInterval: timeInterval, repeats: false) { [weak self] _ in
-            print("Scheduled timer fired - triggering pause mode")
-            AppState.shared.triggerPauseMode()
+            print("Scheduled timer fired - triggering pause mode with text: \(scheduledTime.name)")
+            AppState.shared.triggerPauseMode(displayText: scheduledTime.name)
 
             // Reschedule for tomorrow and update next scheduled activation
-            if let (newTimer, newFireDate) = self?.createDailyTimer(for: time) {
+            if let (newTimer, newFireDate) = self?.createDailyTimer(for: scheduledTime) {
                 self?.scheduledTimers.append(newTimer)
 
                 // Recalculate the earliest scheduled activation
