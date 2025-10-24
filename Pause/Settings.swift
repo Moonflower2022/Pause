@@ -66,6 +66,30 @@ class Settings: ObservableObject {
         }
     }
 
+    @Published var startSoundEnabled: Bool {
+        didSet {
+            UserDefaults.standard.set(startSoundEnabled, forKey: "startSoundEnabled")
+        }
+    }
+
+    @Published var startSoundVolume: Double {
+        didSet {
+            UserDefaults.standard.set(startSoundVolume, forKey: "startSoundVolume")
+        }
+    }
+
+    @Published var endSoundEnabled: Bool {
+        didSet {
+            UserDefaults.standard.set(endSoundEnabled, forKey: "endSoundEnabled")
+        }
+    }
+
+    @Published var endSoundVolume: Double {
+        didSet {
+            UserDefaults.standard.set(endSoundVolume, forKey: "endSoundVolume")
+        }
+    }
+
     @Published var showInMenuBar: Bool {
         didSet {
             UserDefaults.standard.set(showInMenuBar, forKey: "showInMenuBar")
@@ -213,6 +237,10 @@ class Settings: ObservableObject {
         self.soundEnabled = UserDefaults.standard.object(forKey: "soundEnabled") as? Bool ?? true
         self.soundVolume = UserDefaults.standard.object(forKey: "soundVolume") as? Double ?? 0.5
         self.soundRepeatRate = UserDefaults.standard.object(forKey: "soundRepeatRate") as? Int ?? 0
+        self.startSoundEnabled = UserDefaults.standard.object(forKey: "startSoundEnabled") as? Bool ?? true
+        self.startSoundVolume = UserDefaults.standard.object(forKey: "startSoundVolume") as? Double ?? 1.0
+        self.endSoundEnabled = UserDefaults.standard.object(forKey: "endSoundEnabled") as? Bool ?? true
+        self.endSoundVolume = UserDefaults.standard.object(forKey: "endSoundVolume") as? Double ?? 1.0
         self.showInMenuBar = UserDefaults.standard.object(forKey: "showInMenuBar") as? Bool ?? false
         self.completedSessions = UserDefaults.standard.object(forKey: "completedSessions") as? Int ?? 0
         self.completedSessionTime = UserDefaults.standard.object(forKey: "completedSessionTime") as? Int ?? 0

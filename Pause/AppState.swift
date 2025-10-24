@@ -17,6 +17,8 @@ class AppState: NSObject, ObservableObject, AVAudioPlayerDelegate {
 
     var timer: Timer?
     var audioPlayer: AVAudioPlayer?
+    var startSoundPlayer: AVAudioPlayer?
+    var endSoundPlayer: AVAudioPlayer?
     var eventMonitor: Any?
     var createdWindows: [NSWindow] = []  // Keep strong references to windows we create
     var soundRepeatTimer: Timer?
@@ -57,6 +59,9 @@ class AppState: NSObject, ObservableObject, AVAudioPlayerDelegate {
         // Ensure a window exists and go fullscreen
         ensureWindowAndFullscreen()
 
+        // Play start sound
+        playStartSound()
+
         // Start playing a random ambient sound if enabled
         if Settings.shared.soundEnabled {
             playRandomAmbientSound()
@@ -89,6 +94,9 @@ class AppState: NSObject, ObservableObject, AVAudioPlayerDelegate {
             Settings.shared.completedSessionTime += currentSessionDuration
             print("Session completed! Total sessions: \(Settings.shared.completedSessions), Total time: \(Settings.shared.completedSessionTime)s")
 
+            // Play end sound
+            playEndSound()
+
             // Recalculate timers after session completes if the setting is enabled
             if Settings.shared.recalculateOnActivation {
                 ActivationScheduler.shared.recalculateTimers()
@@ -105,9 +113,12 @@ class AppState: NSObject, ObservableObject, AVAudioPlayerDelegate {
         soundRepeatTimer?.invalidate()
         soundRepeatTimer = nil
 
-        // Stop the audio player
+        // Stop the audio players
         audioPlayer?.stop()
         audioPlayer = nil
+
+        startSoundPlayer?.stop()
+        startSoundPlayer = nil
 
         // Remove event monitor
         if let monitor = eventMonitor {
@@ -205,12 +216,15 @@ class AppState: NSObject, ObservableObject, AVAudioPlayerDelegate {
     }
 
     private func playRandomAmbientSound() {
-        // Select a random ambient sound
+        // Select a random ambient sound only on first play (will be stored for the session)
         guard let randomSound = ambientSounds.randomElement() else { return }
+        playAmbientSound(randomSound)
+    }
 
+    private func playAmbientSound(_ soundName: String) {
         // Get the URL for the sound file (Xcode copies them to the main bundle Resources)
-        guard let soundURL = Bundle.main.url(forResource: randomSound, withExtension: "mp3") else {
-            print("Could not find audio file: \(randomSound).mp3")
+        guard let soundURL = Bundle.main.url(forResource: soundName, withExtension: "mp3") else {
+            print("Could not find audio file: \(soundName).mp3")
             return
         }
 
@@ -232,9 +246,53 @@ class AppState: NSObject, ObservableObject, AVAudioPlayerDelegate {
             audioPlayer?.prepareToPlay()
             audioPlayer?.play()
 
-            print("Playing ambient sound: \(randomSound).mp3 (volume: \(Int(Settings.shared.soundVolume * 100))%)")
+            print("Playing ambient sound: \(soundName).mp3 (volume: \(Int(Settings.shared.soundVolume * 100))%)")
         } catch {
             print("Error playing audio: \(error.localizedDescription)")
+        }
+    }
+
+    private func playStartSound() {
+        guard Settings.shared.startSoundEnabled else {
+            print("Start sound is disabled")
+            return
+        }
+
+        guard let soundURL = Bundle.main.url(forResource: "start", withExtension: "mp3") else {
+            print("Could not find start.mp3")
+            return
+        }
+
+        do {
+            startSoundPlayer = try AVAudioPlayer(contentsOf: soundURL)
+            startSoundPlayer?.volume = Float(Settings.shared.startSoundVolume)
+            startSoundPlayer?.prepareToPlay()
+            startSoundPlayer?.play()
+            print("Playing start.mp3 (volume: \(Int(Settings.shared.startSoundVolume * 100))%)")
+        } catch {
+            print("Error playing start sound: \(error.localizedDescription)")
+        }
+    }
+
+    private func playEndSound() {
+        guard Settings.shared.endSoundEnabled else {
+            print("End sound is disabled")
+            return
+        }
+
+        guard let soundURL = Bundle.main.url(forResource: "end", withExtension: "mp3") else {
+            print("Could not find end.mp3")
+            return
+        }
+
+        do {
+            endSoundPlayer = try AVAudioPlayer(contentsOf: soundURL)
+            endSoundPlayer?.volume = Float(Settings.shared.endSoundVolume)
+            endSoundPlayer?.prepareToPlay()
+            endSoundPlayer?.play()
+            print("Playing end.mp3 (volume: \(Int(Settings.shared.endSoundVolume * 100))%)")
+        } catch {
+            print("Error playing end sound: \(error.localizedDescription)")
         }
     }
 

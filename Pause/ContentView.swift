@@ -116,7 +116,7 @@ struct ContentView: View {
                 }
 
                 Section {
-                    Toggle("Enable Sound", isOn: $settings.soundEnabled)
+                    Toggle("Enable Ambient Sound", isOn: $settings.soundEnabled)
 
                     HStack {
                         Text("Volume")
@@ -141,7 +141,39 @@ struct ContentView: View {
                     }
                     .disabled(!settings.soundEnabled)
                 } header: {
-                    Text("Audio")
+                    Text("Ambient Audio")
+                }
+
+                Section {
+                    Toggle("Enable Start Sound", isOn: $settings.startSoundEnabled)
+
+                    HStack {
+                        Text("Volume")
+                            .frame(width: 140, alignment: .leading)
+                        Slider(value: $settings.startSoundVolume, in: 0...1, step: 0.1)
+                        Text("\(Int(settings.startSoundVolume * 100))%")
+                            .frame(width: 50, alignment: .trailing)
+                            .monospacedDigit()
+                    }
+                    .disabled(!settings.startSoundEnabled)
+                } header: {
+                    Text("Start Sound")
+                }
+
+                Section {
+                    Toggle("Enable End Sound", isOn: $settings.endSoundEnabled)
+
+                    HStack {
+                        Text("Volume")
+                            .frame(width: 140, alignment: .leading)
+                        Slider(value: $settings.endSoundVolume, in: 0...1, step: 0.1)
+                        Text("\(Int(settings.endSoundVolume * 100))%")
+                            .frame(width: 50, alignment: .trailing)
+                            .monospacedDigit()
+                    }
+                    .disabled(!settings.endSoundEnabled)
+                } header: {
+                    Text("End Sound")
                 }
 
                 Section {
