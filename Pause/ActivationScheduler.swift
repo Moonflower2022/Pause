@@ -12,6 +12,8 @@ class ActivationScheduler: ObservableObject {
 
     @Published var nextRandomActivation: Date?
     @Published var randomActivationRange: String = ""
+    @Published var nextRepeatedActivation: Date?
+    @Published var nextScheduledActivation: Date?
 
     private var repeatedTimer: Timer?
     private var randomTimer: Timer?
@@ -63,9 +65,22 @@ class ActivationScheduler: ObservableObject {
 
         print("Setting up repeated timer: every \(intervalMinutes) minutes")
 
-        repeatedTimer = Timer.scheduledTimer(withTimeInterval: intervalSeconds, repeats: true) { _ in
+        // Calculate when it will fire
+        let fireDate = Date().addingTimeInterval(intervalSeconds)
+
+        DispatchQueue.main.async {
+            self.nextRepeatedActivation = fireDate
+        }
+
+        repeatedTimer = Timer.scheduledTimer(withTimeInterval: intervalSeconds, repeats: true) { [weak self] _ in
             print("Repeated timer fired - triggering pause mode")
             AppState.shared.triggerPauseMode()
+
+            // Update the next fire date for the next interval
+            let nextFire = Date().addingTimeInterval(intervalSeconds)
+            DispatchQueue.main.async {
+                self?.nextRepeatedActivation = nextFire
+            }
         }
     }
 
@@ -108,14 +123,29 @@ class ActivationScheduler: ObservableObject {
 
         print("Setting up scheduled timers for \(scheduledTimes.count) times")
 
+        var earliestDate: Date?
+
         for scheduledTime in scheduledTimes {
-            if let timer = createDailyTimer(for: scheduledTime) {
+            if let (timer, fireDate) = createDailyTimer(for: scheduledTime) {
                 scheduledTimers.append(timer)
+
+                // Track the earliest scheduled activation
+                if let earliest = earliestDate {
+                    if fireDate < earliest {
+                        earliestDate = fireDate
+                    }
+                } else {
+                    earliestDate = fireDate
+                }
             }
+        }
+
+        DispatchQueue.main.async {
+            self.nextScheduledActivation = earliestDate
         }
     }
 
-    private func createDailyTimer(for time: Date) -> Timer? {
+    private func createDailyTimer(for time: Date) -> (Timer, Date)? {
         let calendar = Calendar.current
         let now = Date()
 
@@ -145,20 +175,64 @@ class ActivationScheduler: ObservableObject {
 
         print("Scheduling timer for \(hour):\(String(format: "%02d", minute)) - fires in \(Int(timeInterval/60)) minutes")
 
-        return Timer.scheduledTimer(withTimeInterval: timeInterval, repeats: false) { [weak self] _ in
+        let timer = Timer.scheduledTimer(withTimeInterval: timeInterval, repeats: false) { [weak self] _ in
             print("Scheduled timer fired - triggering pause mode")
             AppState.shared.triggerPauseMode()
 
-            // Reschedule for tomorrow
-            if let newTimer = self?.createDailyTimer(for: time) {
+            // Reschedule for tomorrow and update next scheduled activation
+            if let (newTimer, newFireDate) = self?.createDailyTimer(for: time) {
                 self?.scheduledTimers.append(newTimer)
+
+                // Recalculate the earliest scheduled activation
+                self?.updateNextScheduledActivation()
             }
+        }
+
+        return (timer, scheduledDate)
+    }
+
+    private func updateNextScheduledActivation() {
+        // This would be called after a scheduled timer fires to update the next earliest time
+        // For now, we can just recalculate by looking at all scheduled times again
+        let scheduledTimes = Settings.shared.scheduledTimes
+        let calendar = Calendar.current
+        let now = Date()
+
+        var earliestDate: Date?
+
+        for scheduledTime in scheduledTimes {
+            let components = calendar.dateComponents([.hour, .minute], from: scheduledTime)
+            guard let hour = components.hour, let minute = components.minute else { continue }
+
+            var todayComponents = calendar.dateComponents([.year, .month, .day], from: now)
+            todayComponents.hour = hour
+            todayComponents.minute = minute
+            todayComponents.second = 0
+
+            guard var scheduledDate = calendar.date(from: todayComponents) else { continue }
+
+            if scheduledDate < now {
+                scheduledDate = calendar.date(byAdding: .day, value: 1, to: scheduledDate) ?? scheduledDate
+            }
+
+            if let earliest = earliestDate {
+                if scheduledDate < earliest {
+                    earliestDate = scheduledDate
+                }
+            } else {
+                earliestDate = scheduledDate
+            }
+        }
+
+        DispatchQueue.main.async {
+            self.nextScheduledActivation = earliestDate
         }
     }
 
     private func clearAllTimers() {
         repeatedTimer?.invalidate()
         repeatedTimer = nil
+        nextRepeatedActivation = nil
 
         randomTimer?.invalidate()
         randomTimer = nil
@@ -167,6 +241,7 @@ class ActivationScheduler: ObservableObject {
 
         scheduledTimers.forEach { $0.invalidate() }
         scheduledTimers.removeAll()
+        nextScheduledActivation = nil
     }
 
     deinit {

@@ -29,16 +29,36 @@ struct ContentView: View {
 
     private var settingsView: some View {
         VStack(spacing: 0) {
-            // Header
-            VStack(spacing: 8) {
-                Text("Pause")
-                    .font(.system(size: 32, weight: .light))
-                Text("Press \(settings.getHotkeyString()) to start")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+            // Header - three column layout
+            HStack(alignment: .center, spacing: 20) {
+                // Left: Session stats
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Sessions: \(settings.completedSessions)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text("Time: \(formatSessionTime(settings.completedSessionTime))")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                // Center: App title
+                VStack(spacing: 8) {
+                    Text("Pause")
+                        .font(.system(size: 32, weight: .light))
+                    Text("Press \(settings.getHotkeyString()) to start")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity)
+
+                // Right: Next activation countdown
+                nextActivationView
+                    .frame(maxWidth: .infinity, alignment: .trailing)
             }
             .padding(.top, 30)
             .padding(.bottom, 20)
+            .padding(.horizontal, 20)
 
             Divider()
 
@@ -63,21 +83,8 @@ struct ContentView: View {
                     .tag(2)
             }
             .padding(.top, 10)
-
-            Divider()
-
-            // Footer
-            VStack(spacing: 4) {
-                Text("Completed sessions: \(settings.completedSessions)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Text("Total meditation time: \(formatSessionTime(settings.completedSessionTime))")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            .padding(.bottom, 20)
         }
-        .frame(minWidth: 500, minHeight: 550)
+        .frame(minWidth: 600, minHeight: 550)
     }
 
     private var sessionSettingsTab: some View {
@@ -290,6 +297,55 @@ struct ContentView: View {
         .scrollContentBackground(.hidden)
     }
 
+    @ViewBuilder
+    private var nextActivationView: some View {
+        if let nextActivation = getNextActivation() {
+            NextActivationCountdown(nextActivation: nextActivation)
+        } else {
+            VStack(alignment: .trailing, spacing: 4) {
+                Text("No automatic")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text("pauses scheduled")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private func getNextActivation() -> (date: Date, type: String)? {
+        var soonest: (date: Date, type: String)?
+
+        // Check repeated timer
+        if let repeatedDate = scheduler.nextRepeatedActivation {
+            soonest = (repeatedDate, "Repeated")
+        }
+
+        // Check random timer
+        if let randomDate = scheduler.nextRandomActivation {
+            if let current = soonest {
+                if randomDate < current.date {
+                    soonest = (randomDate, "Random")
+                }
+            } else {
+                soonest = (randomDate, "Random")
+            }
+        }
+
+        // Check scheduled timer
+        if let scheduledDate = scheduler.nextScheduledActivation {
+            if let current = soonest {
+                if scheduledDate < current.date {
+                    soonest = (scheduledDate, "Scheduled")
+                }
+            } else {
+                soonest = (scheduledDate, "Scheduled")
+            }
+        }
+
+        return soonest
+    }
+
     private func formatSessionTime(_ seconds: Int) -> String {
         let hours = seconds / 3600
         let minutes = (seconds % 3600) / 60
@@ -457,6 +513,55 @@ class KeyCaptureView: NSView {
         // Only accept if at least one modifier is pressed
         if carbonModifiers != 0 {
             onKeyPressed?(UInt32(event.keyCode), carbonModifiers)
+        }
+    }
+}
+
+// Live countdown view for next activation
+struct NextActivationCountdown: View {
+    let nextActivation: (date: Date, type: String)
+    @State private var timeRemaining: TimeInterval = 0
+    @State private var timer: Timer?
+
+    var body: some View {
+        VStack(alignment: .trailing, spacing: 4) {
+            Text("Next: \(nextActivation.type)")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Text(formatCountdown(timeRemaining))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .monospacedDigit()
+        }
+        .onAppear {
+            updateTimeRemaining()
+            // Update every second
+            timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
+                updateTimeRemaining()
+            }
+        }
+        .onDisappear {
+            timer?.invalidate()
+            timer = nil
+        }
+    }
+
+    private func updateTimeRemaining() {
+        timeRemaining = max(0, nextActivation.date.timeIntervalSinceNow)
+    }
+
+    private func formatCountdown(_ seconds: TimeInterval) -> String {
+        let totalSeconds = Int(seconds)
+        let hours = totalSeconds / 3600
+        let minutes = (totalSeconds % 3600) / 60
+        let secs = totalSeconds % 60
+
+        if hours > 0 {
+            return String(format: "in %dh %dm %ds", hours, minutes, secs)
+        } else if minutes > 0 {
+            return String(format: "in %dm %ds", minutes, secs)
+        } else {
+            return String(format: "in %ds", secs)
         }
     }
 }
