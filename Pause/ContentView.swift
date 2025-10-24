@@ -59,27 +59,36 @@ struct ContentView: View {
 
             Divider()
 
-            // Tabbed Settings
-            TabView(selection: $settings.selectedTab) {
-                sessionSettingsTab
-                    .tabItem {
-                        Label("General", systemImage: "timer")
-                    }
-                    .tag(0)
-
-                activationSettingsTab
-                    .tabItem {
-                        Label("Activation", systemImage: "bell")
-                    }
-                    .tag(1)
-
-                shortcutsSettingsTab
-                    .tabItem {
-                        Label("Shortcuts", systemImage: "command")
-                    }
-                    .tag(2)
+            // Icon-based tab navigation
+            HStack(spacing: 16) {
+                TabButton(icon: "gearshape", label: "General", tag: 0, selectedTab: $settings.selectedTab)
+                TabButton(icon: "display", label: "Session", tag: 1, selectedTab: $settings.selectedTab)
+                TabButton(icon: "speaker.wave.2", label: "Audio", tag: 2, selectedTab: $settings.selectedTab)
+                TabButton(icon: "clock", label: "Activation", tag: 3, selectedTab: $settings.selectedTab)
+                TabButton(icon: "command", label: "Shortcuts", tag: 4, selectedTab: $settings.selectedTab)
             }
-            .padding(.top, 10)
+            .padding(.vertical, 16)
+
+            Divider()
+
+            // Content area
+            Group {
+                switch settings.selectedTab {
+                case 0:
+                    generalSettingsTab
+                case 1:
+                    sessionSettingsTab
+                case 2:
+                    audioSettingsTab
+                case 3:
+                    activationSettingsTab
+                case 4:
+                    shortcutsSettingsTab
+                default:
+                    generalSettingsTab
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .frame(minWidth: 600, minHeight: 550)
         .textSelection(.enabled)
@@ -114,7 +123,13 @@ struct ContentView: View {
                 } header: {
                     Text("Timing")
                 }
+        }
+        .formStyle(.grouped)
+        .scrollContentBackground(.hidden)
+    }
 
+    private var audioSettingsTab: some View {
+        Form {
                 Section {
                     Toggle("Enable Ambient Sound", isOn: $settings.soundEnabled)
 
@@ -174,12 +189,6 @@ struct ContentView: View {
                     .disabled(!settings.endSoundEnabled)
                 } header: {
                     Text("End Sound")
-                }
-
-                Section {
-                    Toggle("Show in Menu Bar", isOn: $settings.showInMenuBar)
-                } header: {
-                    Text("Appearance")
                 }
         }
         .formStyle(.grouped)
@@ -361,10 +370,22 @@ struct ContentView: View {
             Section {
                 HotkeyRecorderView()
             } header: {
-                Text("Global Hotkey")
+                Text("Global Hotkeys")
             } footer: {
                 Text("Press the button below and then press your desired key combination")
                     .font(.caption)
+            }
+        }
+        .formStyle(.grouped)
+        .scrollContentBackground(.hidden)
+    }
+
+    private var generalSettingsTab: some View {
+        Form {
+            Section {
+                Toggle("Show in Menu Bar", isOn: $settings.showInMenuBar)
+            } header: {
+                Text("Appearance")
             }
         }
         .formStyle(.grouped)
@@ -453,7 +474,7 @@ struct HotkeyRecorderView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text("Current Hotkey:")
+                Text("Activate Session:")
                     .frame(width: 140, alignment: .leading)
                 Text(settings.getHotkeyString())
                     .font(.system(.body, design: .monospaced))
@@ -461,18 +482,20 @@ struct HotkeyRecorderView: View {
                     .padding(.vertical, 6)
                     .background(Color.secondary.opacity(0.2))
                     .cornerRadius(6)
-            }
 
-            Button(action: {
-                isRecording = true
-            }) {
-                HStack {
-                    Image(systemName: isRecording ? "record.circle.fill" : "record.circle")
-                        .foregroundColor(isRecording ? .red : .primary)
-                    Text(isRecording ? "Press your key combination..." : "Record New Hotkey")
+                Spacer()
+
+                Button(action: {
+                    isRecording = true
+                }) {
+                    HStack {
+                        Image(systemName: isRecording ? "record.circle.fill" : "record.circle")
+                            .foregroundColor(isRecording ? .red : .primary)
+                        Text(isRecording ? "Press your key combination..." : "Record New Hotkey")
+                    }
                 }
+                .buttonStyle(.bordered)
             }
-            .buttonStyle(.bordered)
         }
         .textSelection(.enabled)
         .background(
@@ -647,6 +670,36 @@ struct NextActivationCountdown: View {
         } else {
             return String(format: "in %ds", secs)
         }
+    }
+}
+
+// Custom tab button for icon-based navigation
+struct TabButton: View {
+    let icon: String
+    let label: String
+    let tag: Int
+    @Binding var selectedTab: Int
+
+    var body: some View {
+        Button(action: {
+            selectedTab = tag
+        }) {
+            VStack(spacing: 4) {
+                Image(systemName: icon)
+                    .font(.system(size: 20))
+                    .foregroundColor(selectedTab == tag ? .accentColor : .secondary)
+                Text(label)
+                    .font(.caption2)
+                    .foregroundColor(selectedTab == tag ? .primary : .secondary)
+            }
+            .frame(width: 70)
+            .padding(.vertical, 6)
+            .background(
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(selectedTab == tag ? Color.accentColor.opacity(0.1) : Color.clear)
+            )
+        }
+        .buttonStyle(.plain)
     }
 }
 
