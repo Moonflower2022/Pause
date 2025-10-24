@@ -54,11 +54,6 @@ class AppState: NSObject, ObservableObject, AVAudioPlayerDelegate {
         currentSessionDuration = Settings.shared.getActualPauseDuration()
         timeRemaining = currentSessionDuration
 
-        // Recalculate timers if the setting is enabled
-        if Settings.shared.recalculateOnActivation {
-            ActivationScheduler.shared.recalculateTimers()
-        }
-
         // Ensure a window exists and go fullscreen
         ensureWindowAndFullscreen()
 
@@ -93,6 +88,11 @@ class AppState: NSObject, ObservableObject, AVAudioPlayerDelegate {
             Settings.shared.completedSessions += 1
             Settings.shared.completedSessionTime += currentSessionDuration
             print("Session completed! Total sessions: \(Settings.shared.completedSessions), Total time: \(Settings.shared.completedSessionTime)s")
+
+            // Recalculate timers after session completes if the setting is enabled
+            if Settings.shared.recalculateOnActivation {
+                ActivationScheduler.shared.recalculateTimers()
+            }
         } else {
             print("Session ended early (not counted)")
         }
