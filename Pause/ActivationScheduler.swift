@@ -20,15 +20,6 @@ class ActivationScheduler: ObservableObject {
     private var scheduledTimers: [Timer] = []
 
     private init() {
-        // Start monitoring settings changes
-        NotificationCenter.default.addObserver(
-            forName: UserDefaults.didChangeNotification,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            self?.updateSchedule()
-        }
-
         // Initial setup
         updateSchedule()
     }
@@ -49,6 +40,27 @@ class ActivationScheduler: ObservableObject {
         }
 
         if settings.scheduledEnabled {
+            setupScheduledTimers()
+        }
+    }
+
+    func updateRepeatedTimer() {
+        clearRepeatedTimer()
+        if Settings.shared.repeatedEnabled {
+            setupRepeatedTimer()
+        }
+    }
+
+    func updateRandomTimer() {
+        clearRandomTimer()
+        if Settings.shared.randomEnabled {
+            setupRandomTimer()
+        }
+    }
+
+    func updateScheduledTimers() {
+        clearScheduledTimers()
+        if Settings.shared.scheduledEnabled {
             setupScheduledTimers()
         }
     }
@@ -230,15 +242,25 @@ class ActivationScheduler: ObservableObject {
     }
 
     private func clearAllTimers() {
+        clearRepeatedTimer()
+        clearRandomTimer()
+        clearScheduledTimers()
+    }
+
+    private func clearRepeatedTimer() {
         repeatedTimer?.invalidate()
         repeatedTimer = nil
         nextRepeatedActivation = nil
+    }
 
+    private func clearRandomTimer() {
         randomTimer?.invalidate()
         randomTimer = nil
         nextRandomActivation = nil
         randomActivationRange = ""
+    }
 
+    private func clearScheduledTimers() {
         scheduledTimers.forEach { $0.invalidate() }
         scheduledTimers.removeAll()
         nextScheduledActivation = nil

@@ -63,36 +63,42 @@ class Settings: ObservableObject {
     @Published var repeatedEnabled: Bool {
         didSet {
             UserDefaults.standard.set(repeatedEnabled, forKey: "repeatedEnabled")
+            ActivationScheduler.shared.updateRepeatedTimer()
         }
     }
 
     @Published var repeatedInterval: Int {
         didSet {
             UserDefaults.standard.set(repeatedInterval, forKey: "repeatedInterval")
+            ActivationScheduler.shared.updateRepeatedTimer()
         }
     }
 
     @Published var randomEnabled: Bool {
         didSet {
             UserDefaults.standard.set(randomEnabled, forKey: "randomEnabled")
+            ActivationScheduler.shared.updateRandomTimer()
         }
     }
 
     @Published var randomMinInterval: Int {
         didSet {
             UserDefaults.standard.set(randomMinInterval, forKey: "randomMinInterval")
+            ActivationScheduler.shared.updateRandomTimer()
         }
     }
 
     @Published var randomMaxInterval: Int {
         didSet {
             UserDefaults.standard.set(randomMaxInterval, forKey: "randomMaxInterval")
+            ActivationScheduler.shared.updateRandomTimer()
         }
     }
 
     @Published var scheduledEnabled: Bool {
         didSet {
             UserDefaults.standard.set(scheduledEnabled, forKey: "scheduledEnabled")
+            ActivationScheduler.shared.updateScheduledTimers()
         }
     }
 
@@ -101,6 +107,7 @@ class Settings: ObservableObject {
             if let encoded = try? JSONEncoder().encode(scheduledTimes) {
                 UserDefaults.standard.set(encoded, forKey: "scheduledTimes")
             }
+            ActivationScheduler.shared.updateScheduledTimers()
         }
     }
 

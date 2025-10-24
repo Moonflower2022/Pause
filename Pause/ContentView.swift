@@ -297,51 +297,7 @@ struct ContentView: View {
 
     @ViewBuilder
     private var nextActivationView: some View {
-        if let nextActivation = getNextActivation() {
-            NextActivationCountdown(nextActivation: nextActivation)
-        } else {
-            VStack(alignment: .trailing, spacing: 4) {
-                Text("No automatic")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Text("pauses scheduled")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-        }
-    }
-
-    private func getNextActivation() -> (date: Date, type: String)? {
-        var soonest: (date: Date, type: String)?
-
-        // Check repeated timer
-        if let repeatedDate = scheduler.nextRepeatedActivation {
-            soonest = (repeatedDate, "Repeated")
-        }
-
-        // Check random timer
-        if let randomDate = scheduler.nextRandomActivation {
-            if let current = soonest {
-                if randomDate < current.date {
-                    soonest = (randomDate, "Random")
-                }
-            } else {
-                soonest = (randomDate, "Random")
-            }
-        }
-
-        // Check scheduled timer
-        if let scheduledDate = scheduler.nextScheduledActivation {
-            if let current = soonest {
-                if scheduledDate < current.date {
-                    soonest = (scheduledDate, "Scheduled")
-                }
-            } else {
-                soonest = (scheduledDate, "Scheduled")
-            }
-        }
-
-        return soonest
+        NextActivationCountdown()
     }
 
     private func formatSessionTime(_ seconds: Int) -> String {
@@ -517,35 +473,85 @@ class KeyCaptureView: NSView {
 
 // Live countdown view for next activation
 struct NextActivationCountdown: View {
-    let nextActivation: (date: Date, type: String)
+    @ObservedObject var scheduler = ActivationScheduler.shared
     @State private var timeRemaining: TimeInterval = 0
     @State private var timer: Timer?
 
     var body: some View {
-        VStack(alignment: .trailing, spacing: 4) {
-            Text("Next: \(nextActivation.type)")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            Text(formatCountdown(timeRemaining))
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .monospacedDigit()
-        }
-        .onAppear {
-            updateTimeRemaining()
-            // Update every second
-            timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
-                updateTimeRemaining()
+        if let nextActivation = getNextActivation() {
+            VStack(alignment: .trailing, spacing: 4) {
+                Text("Next: \(nextActivation.type)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text(formatCountdown(timeRemaining))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
             }
-        }
-        .onDisappear {
-            timer?.invalidate()
-            timer = nil
+            .onAppear {
+                updateTimeRemaining()
+                // Update every second - add to common modes so it runs during UI tracking (slider dragging, etc)
+                let newTimer = Timer(timeInterval: 1.0, repeats: true) { _ in
+                    updateTimeRemaining()
+                }
+                RunLoop.current.add(newTimer, forMode: .common)
+                timer = newTimer
+            }
+            .onDisappear {
+                timer?.invalidate()
+                timer = nil
+            }
+        } else {
+            VStack(alignment: .trailing, spacing: 4) {
+                Text("No automatic")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text("pauses scheduled")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
         }
     }
 
+    private func getNextActivation() -> (date: Date, type: String)? {
+        var soonest: (date: Date, type: String)?
+
+        // Check repeated timer
+        if let repeatedDate = scheduler.nextRepeatedActivation {
+            soonest = (repeatedDate, "Repeated")
+        }
+
+        // Check random timer
+        if let randomDate = scheduler.nextRandomActivation {
+            if let current = soonest {
+                if randomDate < current.date {
+                    soonest = (randomDate, "Random")
+                }
+            } else {
+                soonest = (randomDate, "Random")
+            }
+        }
+
+        // Check scheduled timer
+        if let scheduledDate = scheduler.nextScheduledActivation {
+            if let current = soonest {
+                if scheduledDate < current.date {
+                    soonest = (scheduledDate, "Scheduled")
+                }
+            } else {
+                soonest = (scheduledDate, "Scheduled")
+            }
+        }
+
+        return soonest
+    }
+
     private func updateTimeRemaining() {
-        timeRemaining = max(0, nextActivation.date.timeIntervalSinceNow)
+        if let nextActivation = getNextActivation() {
+            timeRemaining = max(0, nextActivation.date.timeIntervalSinceNow)
+        } else {
+            timeRemaining = 0
+        }
     }
 
     private func formatCountdown(_ seconds: TimeInterval) -> String {
