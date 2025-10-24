@@ -83,6 +83,7 @@ struct ContentView: View {
             .padding(.top, 10)
         }
         .frame(minWidth: 600, minHeight: 550)
+        .textSelection(.enabled)
     }
 
     private var sessionSettingsTab: some View {
@@ -357,6 +358,7 @@ struct ContentView: View {
                     .foregroundColor(.white.opacity(0.6))
                     .padding(.bottom, 40)
             }
+            .textSelection(.enabled)
         }
     }
 
@@ -397,6 +399,7 @@ struct HotkeyRecorderView: View {
             }
             .buttonStyle(.bordered)
         }
+        .textSelection(.enabled)
         .background(
             // Invisible overlay to capture key events
             KeyEventHandlingView(isRecording: $isRecording) { keyCode, modifiers in
@@ -488,6 +491,7 @@ struct NextActivationCountdown: View {
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
             }
+            .textSelection(.enabled)
             .onAppear {
                 updateTimeRemaining()
                 // Update every second - add to common modes so it runs during UI tracking (slider dragging, etc)
@@ -510,6 +514,7 @@ struct NextActivationCountdown: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
+            .textSelection(.enabled)
         }
     }
 
