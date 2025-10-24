@@ -5,7 +5,7 @@
 //  Created by Harrison Qian on 10/22/25.
 //
 
-import SwiftUI
+import Foundation
 import Carbon.HIToolbox
 
 class GlobalHotkeyManager: ObservableObject {

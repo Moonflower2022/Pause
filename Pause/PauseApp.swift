@@ -33,16 +33,6 @@ struct PauseApp: App {
             }
         }
     }
-
-    private func openSettingsWindow() {
-        // Activate app and show main window
-        NSApp.activate(ignoringOtherApps: true)
-        if let window = NSApplication.shared.windows.first(where: { $0.isVisible }) {
-            window.makeKeyAndOrderFront(nil)
-        } else if let window = NSApplication.shared.windows.first {
-            window.makeKeyAndOrderFront(nil)
-        }
-    }
 }
 
 class AppDelegate: NSObject, NSApplicationDelegate {

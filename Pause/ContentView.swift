@@ -7,7 +7,6 @@
 
 import SwiftUI
 import AppKit
-import AVFoundation
 import Carbon.HIToolbox
 
 struct ContentView: View {
@@ -263,7 +262,6 @@ struct ContentView: View {
                             }
                             .buttonStyle(.plain)
                         }
-                        .alignmentGuide(.leading) { d in d[.leading] }
                     }
                     .onDelete { indices in
                         settings.deleteScheduledTime(at: indices)
@@ -412,78 +410,6 @@ struct ContentView: View {
         let mins = seconds / 60
         let secs = seconds % 60
         return String(format: "%d:%02d", mins, secs)
-    }
-}
-
-// Editable label that shows as text until double-clicked
-struct EditableLabel: View {
-    @Binding var text: String
-    @State private var isEditing = false
-    @FocusState private var isFocused: Bool
-
-    var body: some View {
-        if isEditing {
-            TextField("Name", text: $text, onCommit: {
-                isEditing = false
-            })
-            .textFieldStyle(.roundedBorder)
-            .focused($isFocused)
-            .onAppear {
-                isFocused = true
-            }
-            .frame(maxWidth: 200)
-        } else {
-            EditableLabelNSView(text: text, isEditing: $isEditing)
-                .frame(height: 22)
-        }
-    }
-}
-
-// NSView wrapper to handle double-click without text selection interfering
-struct EditableLabelNSView: NSViewRepresentable {
-    let text: String
-    @Binding var isEditing: Bool
-
-    func makeNSView(context: Context) -> NSTextField {
-        let textField = ClickableTextField()
-        textField.isEditable = false
-        textField.isBordered = false
-        textField.backgroundColor = NSColor.secondarySystemFill
-        textField.drawsBackground = true
-        textField.isSelectable = true
-        textField.alignment = .left
-        textField.font = NSFont.systemFont(ofSize: NSFont.systemFontSize)
-        textField.cell?.lineBreakMode = .byTruncatingTail
-
-        // Padding
-        textField.cell?.wraps = false
-        textField.cell?.isScrollable = true
-
-        // Set the double-click handler
-        if let clickableField = textField as? ClickableTextField {
-            clickableField.onDoubleClick = {
-                isEditing = true
-            }
-        }
-
-        return textField
-    }
-
-    func updateNSView(_ nsView: NSTextField, context: Context) {
-        nsView.stringValue = text
-    }
-}
-
-// Custom NSTextField that handles double-click
-class ClickableTextField: NSTextField {
-    var onDoubleClick: (() -> Void)?
-
-    override func mouseDown(with event: NSEvent) {
-        if event.clickCount == 2 {
-            onDoubleClick?()
-        } else {
-            super.mouseDown(with: event)
-        }
     }
 }
 

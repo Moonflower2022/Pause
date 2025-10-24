@@ -11,7 +11,6 @@ class ActivationScheduler: ObservableObject {
     static let shared = ActivationScheduler()
 
     @Published var nextRandomActivation: Date?
-    @Published var randomActivationRange: String = ""
     @Published var nextRepeatedActivation: Date?
     @Published var nextScheduledActivation: Date?
 
@@ -115,7 +114,6 @@ class ActivationScheduler: ObservableObject {
         // Update published properties
         DispatchQueue.main.async {
             self.nextRandomActivation = fireDate
-            self.randomActivationRange = "\(minMinutes)-\(maxMinutes) min"
         }
 
         print("Setting up random timer: will fire in \(randomMinutes) minutes (range: \(minMinutes)-\(maxMinutes) min)")
@@ -257,7 +255,6 @@ class ActivationScheduler: ObservableObject {
         randomTimer?.invalidate()
         randomTimer = nil
         nextRandomActivation = nil
-        randomActivationRange = ""
     }
 
     private func clearScheduledTimers() {
