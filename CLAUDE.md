@@ -1,121 +1,91 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+AI assistant guidance for Pause macOS meditation app.
 
-## Project Overview
+---
 
-Pause is a macOS application built with SwiftUI and Swift 5.0. The project targets macOS 15.3+ and uses Xcode 16.4 for development.
+## Quick Reference
 
-## Build and Test Commands
+**Build**: `xcodebuild -project Pause.xcodeproj -scheme Pause -configuration Debug build`
+**Test**: Uses **Swift Testing** (NOT XCTest) - `@Test` + `#expect()`, never `XCTestCase`
 
-### Building the Application
-```bash
-# Build the app (Debug configuration)
-xcodebuild -project Pause.xcodeproj -scheme Pause -configuration Debug build
-
-# Build the app (Release configuration)
-xcodebuild -project Pause.xcodeproj -scheme Pause -configuration Release build
-
-# Clean build artifacts
-xcodebuild -project Pause.xcodeproj -scheme Pause clean
-```
-
-### Running Tests
-```bash
-# Run all tests
-xcodebuild test -project Pause.xcodeproj -scheme Pause
-
-# Run only unit tests (PauseTests)
-xcodebuild test -project Pause.xcodeproj -scheme Pause -only-testing:PauseTests
-
-# Run only UI tests (PauseUITests)
-xcodebuild test -project Pause.xcodeproj -scheme Pause -only-testing:PauseUITests
-
-# Run a specific test
-xcodebuild test -project Pause.xcodeproj -scheme Pause -only-testing:PauseTests/PauseTests/example
-```
-
-### Development Workflow
-```bash
-# Open project in Xcode
-open Pause.xcodeproj
-
-# Build and run from command line
-xcodebuild -project Pause.xcodeproj -scheme Pause -configuration Debug
-```
+---
 
 ## Architecture
 
-### Application Overview
-Pause is a meditation/mindfulness app that triggers fullscreen breathing sessions either manually (via global hotkey) or automatically based on schedules. The app uses a singleton-based architecture with SwiftUI for the UI layer.
+### Five Core Singletons
+1. **AppState** - Session state, AVAudioPlayer, fullscreen windows, stats
+2. **Settings** - `@Published` properties with `didSet` → auto-save to UserDefaults
+3. **ActivationScheduler** - 3 independent timers (repeated/random/scheduled)
+4. **GlobalHotkeyManager** - Carbon HIToolbox for global hotkeys
+5. **MenuBarManager** - Optional NSStatusBar
 
-### Core Components
+### Refactored Structure (2024)
+```
+Pause/
+├── Views/
+│   ├── BreathingView.swift
+│   ├── Components/[NextActivationCountdown, TabButton]
+│   └── Settings/[5 tab files]
+└── Utilities/SliderHelpers.swift
+```
 
-#### State Management (Singleton Pattern)
-All state is managed through three shared singletons:
-- **`AppState.shared`**: Controls pause mode state, timer logic, audio playback, and fullscreen window management
-- **`Settings.shared`**: Manages user preferences backed by UserDefaults with `@Published` properties
-- **`ActivationScheduler.shared`**: Handles three independent activation modes (repeated, random, scheduled)
-- **`GlobalHotkeyManager.shared`**: Registers Control-Command-0 hotkey using Carbon APIs
+---
 
-#### Key Files
-- **`PauseApp.swift`**: App entry point with `@NSApplicationDelegateAdaptor` to prevent termination when windows close
-- **`ContentView.swift`**: SwiftUI view that switches between settings UI and fullscreen breathing view based on `AppState.isPauseMode`
-- **`AppState.swift`**: Core session logic including timer management, audio playback (AVAudioPlayer), fullscreen transitions, and session tracking
-- **`Settings.swift`**: Persistence layer using `@Published` properties that auto-save to UserDefaults on change
-- **`ActivationScheduler.swift`**: Timer orchestration for three activation modes that can run simultaneously
-- **`GlobalHotkeyManager.swift`**: Carbon-based global hotkey registration (uses legacy Carbon HIToolbox APIs)
+## Critical Implementation Details
 
-#### Application Lifecycle
-1. App initializes `GlobalHotkeyManager` and `ActivationScheduler` in `PauseApp.init()`
-2. `AppDelegate` prevents app termination when windows close (allows background hotkey operation)
-3. Hotkey or timer triggers `AppState.triggerPauseMode()`
-4. If not in pause mode: creates/finds window, enters fullscreen, starts timer and optional audio
-5. If already in pause mode: exits early (spacebar also exits early)
-6. Session completion increments `Settings.completedSessions` and `completedSessionTime`
+### Carbon Hotkey System
+```swift
+// Modern Cocoa has NO global hotkey API - must use legacy Carbon
+RegisterEventHotKey(keyCode, modifiers, hotKeyID, GetApplicationEventTarget(), 0, &hotKeyRef)
 
-#### Activation Modes (Independent, Can Run Simultaneously)
-- **Repeated**: Fires every N minutes using a repeating Timer
-- **Random**: Fires at random intervals within min-max range, reschedules itself after each trigger
-- **Scheduled**: Fires at specific times of day, automatically reschedules for next day
+// C callback with unmanaged self pointer
+func eventHandler(..., userData: UnsafeMutableRawPointer?) -> OSStatus {
+    let manager = Unmanaged<GlobalHotkeyManager>.fromOpaque(userData).takeUnretainedValue()
+    manager.onHotkeyPressed()
+    return noErr
+}
+```
+**CRITICAL**: Must `UnregisterEventHotKey()` in `deinit` or system leaks
 
-### Project Structure
-- **Pause/**: Main application target containing app source code
-  - Core files: `PauseApp.swift`, `ContentView.swift`, `AppState.swift`, `Settings.swift`
-  - Managers: `GlobalHotkeyManager.swift`, `ActivationScheduler.swift`
-  - `Pause.entitlements`: App sandbox entitlements configuration
-  - `Assets.xcassets/`: App icons and visual assets
-  - Audio files: `pad.mp3`, `pad2.mp3`, `keys.mp3`, `rain.mp3`, `walking.mp3`, `birds.mp3`, `waves.mp3`
+### Timer Orchestration
+- **Repeated**: `Timer.scheduledTimer(interval, repeats: true)`
+- **Random**: Non-repeating, reschedules self with new random interval after firing
+- **Scheduled**: Up to 15 daily timers, each auto-reschedules for next day
 
-- **PauseTests/**: Unit test target using Swift Testing framework
-  - Tests are written using the modern `@Test` macro (not XCTest)
+### Settings Persistence
+```swift
+@Published var pauseDuration: Int {
+    didSet { UserDefaults.standard.set(pauseDuration, forKey: "pauseDuration") }
+}
+```
+No explicit save calls - reactive auto-persistence via `didSet`
 
-- **PauseUITests/**: UI test target for automated UI testing
+### Fullscreen Management
+```swift
+// MUST delay 0.3s or window not ready
+DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+    window.toggleFullScreen(nil)
+}
+```
+Strong refs in `AppState.createdWindows: [NSWindow]` prevent dealloc
 
-### Key Configuration Details
-- **Bundle Identifier**: `pause.Pause`
-- **Swift Version**: 5.0
-- **Deployment Target**: macOS 15.3
-- **Code Signing**: Automatic
-- **App Groups**: Enabled via `REGISTER_APP_GROUPS = YES`
+### Audio System
+- Random selection (1 of 7) per session
+- Two modes: `numberOfLoops = -1` (loop) or `soundRepeatTimer` (gaps)
+- Delegate: `AVAudioPlayerDelegate` → `audioPlayerDidFinishPlaying`
+- Cleanup: **Always** `stop()` + `nil` out players
 
-### Entitlements
-The app runs in a sandboxed environment with:
-- App sandbox enabled (`com.apple.security.app-sandbox`)
-- Read-only access to user-selected files (`com.apple.security.files.user-selected.read-only`)
+---
 
-### Testing Framework
-This project uses Swift Testing (the modern Swift testing framework) rather than XCTest. Tests use the `@Test` attribute and `#expect()` for assertions, not XCTest's `XCTestCase` and `XCTAssert*()` methods.
+## Common Gotchas
 
-## Development Notes
+1. **Timer Retention**: Use `[weak self]` in timer closures
+2. **Space Exit**: `NSEvent.addLocalMonitorForEvents` (NOT global) for fullscreen
+3. **Hotkey Cleanup**: `UnregisterEventHotKey()` in `deinit` mandatory
+4. **Testing**: Swift Testing only - importing `XCTest` is wrong framework
+5. **Fullscreen**: 0.3s delay before `toggleFullScreen(nil)` required
 
-### Adding New Swift Files
-New `.swift` files added to the `Pause/` directory will be automatically included in the build due to the project using `PBXFileSystemSynchronizedRootGroup` (Xcode's modern file system synchronization).
+---
 
-### SwiftUI Previews
-Views include `#Preview` macros for live previews in Xcode Canvas during development.
-
-### Build Configurations
-The project has two build configurations:
-- **Debug**: Includes debug symbols, testability enabled, optimization level 0
-- **Release**: Optimized for performance with whole module optimization
+*See README.md for user docs. This is developer/AI reference only.*
