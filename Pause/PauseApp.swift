@@ -19,6 +19,9 @@ struct PauseApp: App {
 
         // Initialize the activation scheduler
         _ = ActivationScheduler.shared
+
+        // Initialize the menu bar manager
+        _ = MenuBarManager.shared
     }
 
     var body: some Scene {

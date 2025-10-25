@@ -93,6 +93,14 @@ class Settings: ObservableObject {
     @Published var showInMenuBar: Bool {
         didSet {
             UserDefaults.standard.set(showInMenuBar, forKey: "showInMenuBar")
+            MenuBarManager.shared.updateMenuBarVisibility()
+        }
+    }
+
+    @Published var menuBarShowTimer: Bool {
+        didSet {
+            UserDefaults.standard.set(menuBarShowTimer, forKey: "menuBarShowTimer")
+            MenuBarManager.shared.updateCountdown()
         }
     }
 
@@ -248,6 +256,7 @@ class Settings: ObservableObject {
         self.endSoundEnabled = UserDefaults.standard.object(forKey: "endSoundEnabled") as? Bool ?? true
         self.endSoundVolume = UserDefaults.standard.object(forKey: "endSoundVolume") as? Double ?? 1.0
         self.showInMenuBar = UserDefaults.standard.object(forKey: "showInMenuBar") as? Bool ?? false
+        self.menuBarShowTimer = UserDefaults.standard.object(forKey: "menuBarShowTimer") as? Bool ?? true
         self.sessionDisplayText = UserDefaults.standard.object(forKey: "sessionDisplayText") as? String ?? "Just Breathe"
         self.completedSessions = UserDefaults.standard.object(forKey: "completedSessions") as? Int ?? 0
         self.completedSessionTime = UserDefaults.standard.object(forKey: "completedSessionTime") as? Int ?? 0
