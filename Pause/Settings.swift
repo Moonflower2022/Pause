@@ -224,16 +224,16 @@ class Settings: ObservableObject {
         }
     }
 
-    // Hotkey settings
-    @Published var hotkeyModifiers: UInt32 {
+    // Activate session hotkey settings (global)
+    @Published var activateHotkeyModifiers: UInt32 {
         didSet {
-            UserDefaults.standard.set(hotkeyModifiers, forKey: "hotkeyModifiers")
+            UserDefaults.standard.set(activateHotkeyModifiers, forKey: "activateHotkeyModifiers")
         }
     }
 
-    @Published var hotkeyKeyCode: UInt32 {
+    @Published var activateHotkeyKeyCode: UInt32 {
         didSet {
-            UserDefaults.standard.set(hotkeyKeyCode, forKey: "hotkeyKeyCode")
+            UserDefaults.standard.set(activateHotkeyKeyCode, forKey: "activateHotkeyKeyCode")
         }
     }
 
@@ -296,15 +296,26 @@ class Settings: ObservableObject {
 
         self.recalculateOnActivation = UserDefaults.standard.object(forKey: "recalculateOnActivation") as? Bool ?? false
 
-        // Load hotkey settings - default is Command-Shift-P
+        // Load activate hotkey settings - default is Command-Shift-P
         let defaultModifiers = UInt32(cmdKey | shiftKey)
         let defaultKeyCode: UInt32 = 35 // Key code for 'P'
-        self.hotkeyModifiers = UserDefaults.standard.object(forKey: "hotkeyModifiers") as? UInt32 ?? defaultModifiers
-        self.hotkeyKeyCode = UserDefaults.standard.object(forKey: "hotkeyKeyCode") as? UInt32 ?? defaultKeyCode
 
-        // Load exit hotkey settings - default is Command-Shift-C
-        let defaultExitModifiers = UInt32(cmdKey | shiftKey)
-        let defaultExitKeyCode: UInt32 = 8 // Key code for 'C'
+        // Try new key first, fallback to old key for backwards compatibility
+        if let modifiers = UserDefaults.standard.object(forKey: "activateHotkeyModifiers") as? UInt32 {
+            self.activateHotkeyModifiers = modifiers
+        } else {
+            self.activateHotkeyModifiers = UserDefaults.standard.object(forKey: "hotkeyModifiers") as? UInt32 ?? defaultModifiers
+        }
+
+        if let keyCode = UserDefaults.standard.object(forKey: "activateHotkeyKeyCode") as? UInt32 {
+            self.activateHotkeyKeyCode = keyCode
+        } else {
+            self.activateHotkeyKeyCode = UserDefaults.standard.object(forKey: "hotkeyKeyCode") as? UInt32 ?? defaultKeyCode
+        }
+
+        // Load exit hotkey settings - default is Space (no modifiers)
+        let defaultExitModifiers: UInt32 = 0 // No modifiers
+        let defaultExitKeyCode: UInt32 = 49 // Key code for Space
         self.exitHotkeyModifiers = UserDefaults.standard.object(forKey: "exitHotkeyModifiers") as? UInt32 ?? defaultExitModifiers
         self.exitHotkeyKeyCode = UserDefaults.standard.object(forKey: "exitHotkeyKeyCode") as? UInt32 ?? defaultExitKeyCode
 
@@ -322,9 +333,9 @@ class Settings: ObservableObject {
         return max(10, duration) // Minimum 10 seconds
     }
 
-    // Get human-readable hotkey string
-    func getHotkeyString() -> String {
-        return formatHotkeyString(modifiers: hotkeyModifiers, keyCode: hotkeyKeyCode)
+    // Get human-readable activate hotkey string
+    func getActivateHotkeyString() -> String {
+        return formatHotkeyString(modifiers: activateHotkeyModifiers, keyCode: activateHotkeyKeyCode)
     }
 
     // Get human-readable exit hotkey string
@@ -335,7 +346,7 @@ class Settings: ObservableObject {
     private func formatHotkeyString(modifiers: UInt32, keyCode: UInt32) -> String {
         var parts: [String] = []
 
-        // Add modifiers
+        // Add modifiers (if any)
         if modifiers & UInt32(controlKey) != 0 {
             parts.append("⌃")
         }
@@ -350,8 +361,14 @@ class Settings: ObservableObject {
         }
 
         // Add key name
-        parts.append(keyCodeToString(keyCode))
+        let keyName = keyCodeToString(keyCode)
 
+        // If no modifiers, just return the key name
+        if parts.isEmpty {
+            return keyName
+        }
+
+        parts.append(keyName)
         return parts.joined()
     }
 

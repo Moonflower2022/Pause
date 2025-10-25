@@ -107,7 +107,7 @@ class AppState: NSObject, ObservableObject, AVAudioPlayerDelegate {
             // Check if the pressed key matches the exit hotkey
             let settings = Settings.shared
             if UInt32(event.keyCode) == settings.exitHotkeyKeyCode {
-                // Convert NSEvent modifiers to Carbon modifiers
+                // Convert NSEvent modifiers to Carbon modifiers (only count the ones we care about)
                 var carbonModifiers: UInt32 = 0
                 if event.modifierFlags.contains(.control) {
                     carbonModifiers |= UInt32(controlKey)
@@ -122,7 +122,7 @@ class AppState: NSObject, ObservableObject, AVAudioPlayerDelegate {
                     carbonModifiers |= UInt32(cmdKey)
                 }
 
-                // Check if modifiers match
+                // Check if modifiers match (or if no modifiers are required)
                 if carbonModifiers == settings.exitHotkeyModifiers {
                     self.endPauseMode(completed: false)
                     return nil // Consume the event

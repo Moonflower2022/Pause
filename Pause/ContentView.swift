@@ -47,7 +47,7 @@ struct SettingsView: View {
                 VStack(spacing: 8) {
                     Text("Pause")
                         .font(.system(size: 32, weight: .light))
-                    Text("Press \(settings.getHotkeyString()) to start")
+                    Text("Press \(settings.getActivateHotkeyString()) to start")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

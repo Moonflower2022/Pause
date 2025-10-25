@@ -37,10 +37,10 @@ class GlobalHotkeyManager: ObservableObject {
         // Define the hotkey signature and ID
         let hotKeyID = EventHotKeyID(signature: OSType(0x48545359), id: 1) // 'HTSY' signature
 
-        // Get hotkey settings from Settings
+        // Get activate hotkey settings from Settings
         let settings = Settings.shared
-        let keyCode = settings.hotkeyKeyCode
-        let modifiers = settings.hotkeyModifiers
+        let keyCode = settings.activateHotkeyKeyCode
+        let modifiers = settings.activateHotkeyModifiers
 
         // Event type specification
         var eventType = EventTypeSpec(eventClass: OSType(kEventClassKeyboard),
@@ -74,7 +74,7 @@ class GlobalHotkeyManager: ObservableObject {
         if status != noErr {
             print("Failed to register global hotkey: \(status)")
         } else {
-            print("Global hotkey registered successfully: \(Settings.shared.getHotkeyString())")
+            print("Global hotkey registered successfully: \(Settings.shared.getActivateHotkeyString())")
         }
     }
 
