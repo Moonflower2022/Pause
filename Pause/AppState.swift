@@ -144,21 +144,21 @@ class AppState: NSObject, ObservableObject, AVAudioPlayerDelegate {
         // Activate the app first
         NSApp.activate(ignoringOtherApps: true)
 
-        // Find or create a window
-        var window: NSWindow?
-
-        // First try to find a visible window
-        window = NSApplication.shared.windows.first { $0.isVisible && $0.isKeyWindow == false || $0.isKeyWindow }
-
-        if window == nil {
-            // Try to find any app window (not including system windows)
-            window = NSApplication.shared.windows.first { window in
-                // Filter out system windows
-                return window.className.contains("SwiftUI") || window.title == "Pause" || window.contentView != nil
-            }
+        // Find existing window - look for the Pause window (from WindowGroup or previously created)
+        let window = NSApplication.shared.windows.first { window in
+            // Look for titled windows named "Pause" or with SwiftUI content
+            return window.title == "Pause" && window.styleMask.contains(.titled)
         }
 
-        if window == nil {
+        if let window = window {
+            // Use existing window
+            window.makeKeyAndOrderFront(nil)
+
+            // Only toggle fullscreen if not already fullscreen
+            if !window.styleMask.contains(.fullScreen) {
+                window.toggleFullScreen(nil)
+            }
+        } else {
             // No window exists, create one manually
             let newWindow = NSWindow(
                 contentRect: NSRect(x: 0, y: 0, width: 800, height: 600),
@@ -194,28 +194,15 @@ class AppState: NSObject, ObservableObject, AVAudioPlayerDelegate {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                 newWindow.toggleFullScreen(nil)
             }
-            return
-        }
-
-        // Make sure window is visible and key
-        window?.makeKeyAndOrderFront(nil)
-        window?.orderFrontRegardless()
-
-        let isCurrentlyFullscreen = window?.styleMask.contains(.fullScreen) ?? false
-
-        if !isCurrentlyFullscreen {
-            window?.toggleFullScreen(nil)
         }
     }
 
     private func exitFullscreen() {
-        // Find the window and exit fullscreen
-        guard let window = NSApplication.shared.windows.first(where: { $0.isVisible }) else { return }
-
-        let isCurrentlyFullscreen = window.styleMask.contains(.fullScreen)
-
-        if isCurrentlyFullscreen {
-            window.toggleFullScreen(nil)
+        // Find all fullscreen windows and exit them
+        for window in NSApplication.shared.windows {
+            if window.styleMask.contains(.fullScreen) {
+                window.toggleFullScreen(nil)
+            }
         }
     }
 
