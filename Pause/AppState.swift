@@ -38,6 +38,26 @@ class AppState: NSObject, ObservableObject, AVAudioPlayerDelegate {
 
     private override init() {
         super.init()
+
+        // Set up observer to handle window closing during pause mode
+        NotificationCenter.default.addObserver(
+            forName: NSWindow.willCloseNotification,
+            object: nil,  // Observe all windows
+            queue: .main
+        ) { [weak self] notification in
+            guard let self = self,
+                  let window = notification.object as? NSWindow,
+                  window.title == "Pause" else { return }
+
+            // If we're in pause mode and the Pause window is closing, end the session
+            if self.isPauseMode {
+                print("Window closing during pause mode - ending session")
+                self.endPauseMode(completed: false)
+            }
+
+            // Remove from created windows array if it's there
+            self.createdWindows.removeAll { $0 === window }
+        }
     }
 
     func triggerPauseMode(displayText: String? = nil) {
@@ -100,13 +120,14 @@ class AppState: NSObject, ObservableObject, AVAudioPlayerDelegate {
 
             // Play end sound
             playEndSound()
-
-            // Recalculate timers after session completes if the setting is enabled
-            if Settings.shared.recalculateOnActivation {
-                ActivationScheduler.shared.recalculateTimers()
-            }
         } else {
             print("Session ended early (not counted)")
+        }
+
+        // Recalculate timers after session ends (whether completed or cancelled) if the setting is enabled
+        if Settings.shared.recalculateOnActivation {
+            print("Recalculating timers after session ended")
+            ActivationScheduler.shared.recalculateTimers()
         }
 
         // Stop the timer
@@ -176,17 +197,6 @@ class AppState: NSObject, ObservableObject, AVAudioPlayerDelegate {
 
             // Keep a strong reference to the window
             createdWindows.append(newWindow)
-
-            // Set up notification to remove window from array when it closes
-            NotificationCenter.default.addObserver(
-                forName: NSWindow.willCloseNotification,
-                object: newWindow,
-                queue: .main
-            ) { [weak self] notification in
-                if let closedWindow = notification.object as? NSWindow {
-                    self?.createdWindows.removeAll { $0 === closedWindow }
-                }
-            }
 
             newWindow.makeKeyAndOrderFront(nil)
 
