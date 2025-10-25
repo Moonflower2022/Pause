@@ -72,9 +72,10 @@ class ActivationScheduler: ObservableObject {
 
     private func setupRepeatedTimer() {
         let intervalMinutes = Settings.shared.repeatedInterval
-        let intervalSeconds = TimeInterval(intervalMinutes * 60)
+        // Special case: 0 minutes means 30 seconds
+        let intervalSeconds = intervalMinutes == 0 ? TimeInterval(30) : TimeInterval(intervalMinutes * 60)
 
-        print("Setting up repeated timer: every \(intervalMinutes) minutes")
+        print("Setting up repeated timer: every \(intervalMinutes == 0 ? "30 seconds" : "\(intervalMinutes) minutes")")
 
         // Calculate when it will fire
         let fireDate = Date().addingTimeInterval(intervalSeconds)
@@ -106,7 +107,8 @@ class ActivationScheduler: ObservableObject {
         }
 
         let randomMinutes = Int.random(in: minMinutes...maxMinutes)
-        let intervalSeconds = TimeInterval(randomMinutes * 60)
+        // Special case: 0 minutes means 30 seconds
+        let intervalSeconds = randomMinutes == 0 ? TimeInterval(30) : TimeInterval(randomMinutes * 60)
 
         // Calculate when it will fire
         let fireDate = Date().addingTimeInterval(intervalSeconds)

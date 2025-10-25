@@ -101,10 +101,10 @@ struct ContentView: View {
                         Text("Pause Duration")
                             .frame(width: 140, alignment: .leading)
                         Slider(value: Binding(
-                            get: { Double(settings.pauseDuration) },
-                            set: { settings.pauseDuration = Int($0) }
-                        ), in: 10...600, step: 10)
-                        Text("\(settings.pauseDuration / 60):\(String(format: "%02d", settings.pauseDuration % 60))")
+                            get: { indexForDuration(settings.pauseDuration) },
+                            set: { settings.pauseDuration = durationSteps()[Int($0)] }
+                        ), in: 0...Double(durationSteps().count - 1), step: 1)
+                        Text(formatDuration(settings.pauseDuration))
                             .frame(width: 50, alignment: .trailing)
                             .monospacedDigit()
                     }
@@ -113,10 +113,10 @@ struct ContentView: View {
                         Text("Time Variance")
                             .frame(width: 140, alignment: .leading)
                         Slider(value: Binding(
-                            get: { Double(settings.pauseVariance) },
-                            set: { settings.pauseVariance = Int($0) }
-                        ), in: 0...120, step: 5)
-                        Text("±\(settings.pauseVariance)s")
+                            get: { indexForVariance(settings.pauseVariance) },
+                            set: { settings.pauseVariance = varianceSteps()[Int($0)] }
+                        ), in: 0...Double(varianceSteps().count - 1), step: 1)
+                        Text(settings.pauseVariance == 0 ? "None" : "±\(formatDuration(settings.pauseVariance))")
                             .frame(width: 50, alignment: .trailing)
                             .monospacedDigit()
                     }
@@ -221,10 +221,10 @@ struct ContentView: View {
                         Text("Every")
                             .frame(width: 80, alignment: .leading)
                         Slider(value: Binding(
-                            get: { Double(settings.repeatedInterval) },
-                            set: { settings.repeatedInterval = Int($0) }
-                        ), in: 5...240, step: 5)
-                        Text("\(settings.repeatedInterval) min")
+                            get: { indexForActivation(settings.repeatedInterval) },
+                            set: { settings.repeatedInterval = activationSteps()[Int($0)] }
+                        ), in: 0...Double(activationSteps().count - 1), step: 1)
+                        Text(formatActivation(settings.repeatedInterval))
                             .frame(width: 70, alignment: .trailing)
                             .monospacedDigit()
                     }
@@ -248,17 +248,17 @@ struct ContentView: View {
                         Text("Minimum")
                             .frame(width: 80, alignment: .leading)
                         Slider(value: Binding(
-                            get: { Double(settings.randomMinInterval) },
+                            get: { indexForActivation(settings.randomMinInterval) },
                             set: {
-                                let newValue = Int($0)
+                                let newValue = activationSteps()[Int($0)]
                                 settings.randomMinInterval = newValue
                                 // Ensure max is always >= min
                                 if settings.randomMaxInterval < newValue {
                                     settings.randomMaxInterval = newValue
                                 }
                             }
-                        ), in: 5...240, step: 5)
-                        Text("\(settings.randomMinInterval) min")
+                        ), in: 0...Double(activationSteps().count - 1), step: 1)
+                        Text(formatActivation(settings.randomMinInterval))
                             .frame(width: 70, alignment: .trailing)
                             .monospacedDigit()
                     }
@@ -267,17 +267,17 @@ struct ContentView: View {
                         Text("Maximum")
                             .frame(width: 80, alignment: .leading)
                         Slider(value: Binding(
-                            get: { Double(settings.randomMaxInterval) },
+                            get: { indexForActivation(settings.randomMaxInterval) },
                             set: {
-                                let newValue = Int($0)
+                                let newValue = activationSteps()[Int($0)]
                                 settings.randomMaxInterval = newValue
                                 // Ensure min is always <= max
                                 if settings.randomMinInterval > newValue {
                                     settings.randomMinInterval = newValue
                                 }
                             }
-                        ), in: 5...240, step: 5)
-                        Text("\(settings.randomMaxInterval) min")
+                        ), in: 0...Double(activationSteps().count - 1), step: 1)
+                        Text(formatActivation(settings.randomMaxInterval))
                             .frame(width: 70, alignment: .trailing)
                             .monospacedDigit()
                     }
@@ -485,6 +485,97 @@ struct ContentView: View {
         let mins = seconds / 60
         let secs = seconds % 60
         return String(format: "%d:%02d", mins, secs)
+    }
+
+    // Helper functions for non-linear sliders
+    private func durationSteps() -> [Int] {
+        // 30s, 1m, 2m, 3m, 4m, 5m, 10m, 15m, 20m, 30m, 45m, 1h, 1.5h, 2h, 3h, 5h, 10h (in seconds)
+        return [30, 60, 120, 180, 240, 300, 600, 900, 1200, 1800, 2700, 3600, 5400, 7200, 10800, 18000, 36000]
+    }
+
+    private func activationSteps() -> [Int] {
+        // 30s, 1m, 5m, 10m, 15m, 20m, 25m, 30m, 45m, 1h, 1h30m, 2h, 3h, 5h, 10h (in minutes, but first is 0.5 for 30s)
+        return [0, 1, 5, 10, 15, 20, 25, 30, 45, 60, 90, 120, 180, 300, 600]
+    }
+
+    private func varianceSteps() -> [Int] {
+        // 0s, 5s, 10s, 15s, 30s, 1m, 2m, 5m, 10m (in seconds)
+        return [0, 5, 10, 15, 30, 60, 120, 300, 600]
+    }
+
+    private func indexForDuration(_ duration: Int) -> Double {
+        let steps = durationSteps()
+        if let index = steps.firstIndex(of: duration) {
+            return Double(index)
+        }
+        // Find closest
+        for (index, step) in steps.enumerated() {
+            if duration <= step {
+                return Double(index)
+            }
+        }
+        return Double(steps.count - 1)
+    }
+
+    private func indexForActivation(_ minutes: Int) -> Double {
+        let steps = activationSteps()
+        if let index = steps.firstIndex(of: minutes) {
+            return Double(index)
+        }
+        // Find closest
+        for (index, step) in steps.enumerated() {
+            if minutes <= step {
+                return Double(index)
+            }
+        }
+        return Double(steps.count - 1)
+    }
+
+    private func indexForVariance(_ variance: Int) -> Double {
+        let steps = varianceSteps()
+        if let index = steps.firstIndex(of: variance) {
+            return Double(index)
+        }
+        // Find closest
+        for (index, step) in steps.enumerated() {
+            if variance <= step {
+                return Double(index)
+            }
+        }
+        return Double(steps.count - 1)
+    }
+
+    private func formatDuration(_ seconds: Int) -> String {
+        if seconds < 60 {
+            return "\(seconds)s"
+        } else if seconds < 3600 {
+            let mins = seconds / 60
+            return "\(mins)m"
+        } else {
+            let hours = seconds / 3600
+            let mins = (seconds % 3600) / 60
+            if mins == 0 {
+                return "\(hours)h"
+            } else {
+                return "\(hours)h \(mins)m"
+            }
+        }
+    }
+
+    private func formatActivation(_ minutes: Int) -> String {
+        if minutes == 0 {
+            return "30s"
+        } else if minutes < 60 {
+            return "\(minutes)m"
+        } else {
+            let hours = minutes / 60
+            let mins = minutes % 60
+            if mins == 0 {
+                return "\(hours)h"
+            } else {
+                return "\(hours)h \(mins)m"
+            }
+        }
     }
 }
 
