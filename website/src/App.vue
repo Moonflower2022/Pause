@@ -11,7 +11,7 @@ const features: Feature[] = [
   {
     icon: '🎯',
     title: 'Instant Access',
-    description: 'Press ⌃⌘0 from anywhere on macOS to start a breathing session instantly.'
+    description: 'Press ⌘⇧P from anywhere on macOS to start a breathing session instantly.'
   },
   {
     icon: '⏰',
@@ -36,7 +36,7 @@ const features: Feature[] = [
   {
     icon: '💻',
     title: 'Native macOS',
-    description: 'Built with SwiftUI for seamless integration with macOS 15.3+.'
+    description: 'Built with SwiftUI for seamless integration with macOS 13+.'
   }
 ]
 
@@ -94,7 +94,7 @@ const currentYear = new Date().getFullYear()
             <a href="#download" class="btn btn-primary">Download for macOS</a>
             <a href="#features" class="btn btn-secondary">Learn More</a>
           </div>
-          <p class="hero-requirement">Requires macOS 15.3 or later</p>
+          <p class="hero-requirement">Requires macOS 13.0 (Ventura) or later</p>
         </div>
         <div class="hero-visual">
           <div class="breathing-circle"></div>
@@ -144,7 +144,7 @@ const currentYear = new Date().getFullYear()
           </div>
           <div class="step">
             <div class="step-number">2</div>
-            <h3 class="step-title">Press ⌃⌘0</h3>
+            <h3 class="step-title">Press ⌘⇧P</h3>
             <p class="step-description">Trigger a session from anywhere with your global hotkey.</p>
           </div>
           <div class="step">
@@ -188,7 +188,7 @@ const currentYear = new Date().getFullYear()
           <a href="https://github.com/yourusername/Pause/releases" class="btn btn-download">
             Download Pause
           </a>
-          <p class="download-note">Free and open source • macOS 15.3+ required</p>
+          <p class="download-note">Free and open source • macOS 13.0+ required</p>
           <div class="download-instructions">
             <h3>Installation</h3>
             <ol>
@@ -244,10 +244,17 @@ const currentYear = new Date().getFullYear()
   box-sizing: border-box;
 }
 
+body {
+  margin: 0;
+  padding: 0;
+}
+
 .app {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   color: #1a1a1a;
   line-height: 1.6;
+  margin: 0;
+  padding: 0;
 }
 
 .container {
