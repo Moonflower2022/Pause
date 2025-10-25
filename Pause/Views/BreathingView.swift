@@ -54,10 +54,15 @@ struct BreathingView: View {
                 Spacer()
 
                 // Instructions
-                Text("Press \(settings.getExitHotkeyString()) to exit early")
-                    .font(.caption)
-                    .foregroundColor(.white.opacity(0.6))
-                    .padding(.bottom, 40)
+                VStack(spacing: 8) {
+                    Text("Press \(settings.getExitHotkeyString()) to exit early")
+                        .font(.caption)
+                        .foregroundColor(.white.opacity(0.6))
+                    Text("Press \(settings.getSnoozeHotkeyString()) to snooze")
+                        .font(.caption)
+                        .foregroundColor(.white.opacity(0.6))
+                }
+                .padding(.bottom, 40)
             }
             .textSelection(.enabled)
         }

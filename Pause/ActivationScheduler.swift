@@ -161,41 +161,59 @@ class ActivationScheduler: ObservableObject {
         let calendar = Calendar.current
         let now = Date()
 
-        // Extract hour and minute from the scheduled time
-        let components = calendar.dateComponents([.hour, .minute], from: scheduledTime.date)
+        let scheduledDate: Date
 
-        guard let hour = components.hour, let minute = components.minute else {
-            return nil
-        }
+        if scheduledTime.isRecurring {
+            // Daily recurring timer - schedule for today or tomorrow
+            let components = calendar.dateComponents([.hour, .minute], from: scheduledTime.date)
 
-        // Create a date for today at the scheduled time
-        var todayComponents = calendar.dateComponents([.year, .month, .day], from: now)
-        todayComponents.hour = hour
-        todayComponents.minute = minute
-        todayComponents.second = 0
+            guard let hour = components.hour, let minute = components.minute else {
+                return nil
+            }
 
-        guard var scheduledDate = calendar.date(from: todayComponents) else {
-            return nil
-        }
+            var todayComponents = calendar.dateComponents([.year, .month, .day], from: now)
+            todayComponents.hour = hour
+            todayComponents.minute = minute
+            todayComponents.second = 0
 
-        // If the time has already passed today, schedule for tomorrow
-        if scheduledDate < now {
-            scheduledDate = calendar.date(byAdding: .day, value: 1, to: scheduledDate) ?? scheduledDate
+            guard var date = calendar.date(from: todayComponents) else {
+                return nil
+            }
+
+            // If the time has already passed today, schedule for tomorrow
+            if date < now {
+                date = calendar.date(byAdding: .day, value: 1, to: date) ?? date
+            }
+
+            scheduledDate = date
+        } else {
+            // One-time timer (e.g., snooze) - use absolute date
+            scheduledDate = scheduledTime.date
+
+            // Skip if the scheduled time is in the past
+            if scheduledDate < now {
+                print("Skipping one-time timer for '\(scheduledTime.name)' - time has passed")
+                return nil
+            }
         }
 
         let timeInterval = scheduledDate.timeIntervalSinceNow
 
-        print("Scheduling timer for \(hour):\(String(format: "%02d", minute)) - fires in \(Int(timeInterval/60)) minutes")
+        print("Scheduling \(scheduledTime.isRecurring ? "recurring" : "one-time") timer for '\(scheduledTime.name)' - fires in \(Int(timeInterval/60)) minutes")
 
         let timer = Timer.scheduledTimer(withTimeInterval: timeInterval, repeats: false) { [weak self] _ in
             print("Scheduled timer fired - triggering pause mode with text: \(scheduledTime.name)")
             AppState.shared.triggerPauseMode(displayText: scheduledTime.name)
 
-            // Reschedule for tomorrow and update next scheduled activation
-            if let (newTimer, newFireDate) = self?.createDailyTimer(for: scheduledTime) {
-                self?.scheduledTimers.append(newTimer)
-
-                // Recalculate the earliest scheduled activation
+            if scheduledTime.isRecurring {
+                // Reschedule for tomorrow and update next scheduled activation
+                if let (newTimer, newFireDate) = self?.createDailyTimer(for: scheduledTime) {
+                    self?.scheduledTimers.append(newTimer)
+                    self?.updateNextScheduledActivation()
+                }
+            } else {
+                // One-time timer - remove from scheduled times after firing
+                Settings.shared.scheduledTimes.removeAll { $0.id == scheduledTime.id }
                 self?.updateNextScheduledActivation()
             }
         }

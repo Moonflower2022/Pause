@@ -12,11 +12,13 @@ struct ScheduledTime: Codable, Identifiable, Equatable {
     var id: UUID
     var date: Date
     var name: String
+    var isRecurring: Bool  // false for one-time snooze activations, true for daily recurring
 
-    init(id: UUID = UUID(), date: Date, name: String = "") {
+    init(id: UUID = UUID(), date: Date, name: String = "", isRecurring: Bool = true) {
         self.id = id
         self.date = date
         self.name = name.isEmpty ? "Just Breathe" : name
+        self.isRecurring = isRecurring
     }
 }
 
@@ -250,6 +252,25 @@ class Settings: ObservableObject {
         }
     }
 
+    // Snooze settings
+    @Published var snoozeDuration: Int {
+        didSet {
+            UserDefaults.standard.set(snoozeDuration, forKey: "snoozeDuration")
+        }
+    }
+
+    @Published var snoozeHotkeyModifiers: UInt32 {
+        didSet {
+            UserDefaults.standard.set(snoozeHotkeyModifiers, forKey: "snoozeHotkeyModifiers")
+        }
+    }
+
+    @Published var snoozeHotkeyKeyCode: UInt32 {
+        didSet {
+            UserDefaults.standard.set(snoozeHotkeyKeyCode, forKey: "snoozeHotkeyKeyCode")
+        }
+    }
+
     // UI State
     @Published var selectedTab: Int {
         didSet {
@@ -313,11 +334,16 @@ class Settings: ObservableObject {
             self.activateHotkeyKeyCode = UserDefaults.standard.object(forKey: "hotkeyKeyCode") as? UInt32 ?? defaultKeyCode
         }
 
-        // Load exit hotkey settings - default is Space (no modifiers)
         let defaultExitModifiers: UInt32 = 0 // No modifiers
-        let defaultExitKeyCode: UInt32 = 49 // Key code for Space
+        let defaultExitKeyCode: UInt32 = 14
         self.exitHotkeyModifiers = UserDefaults.standard.object(forKey: "exitHotkeyModifiers") as? UInt32 ?? defaultExitModifiers
         self.exitHotkeyKeyCode = UserDefaults.standard.object(forKey: "exitHotkeyKeyCode") as? UInt32 ?? defaultExitKeyCode
+
+        let defaultSnoozeModifiers: UInt32 = 0 // No modifiers
+        let defaultSnoozeKeyCode: UInt32 = 49
+        self.snoozeDuration = UserDefaults.standard.object(forKey: "snoozeDuration") as? Int ?? 5
+        self.snoozeHotkeyModifiers = UserDefaults.standard.object(forKey: "snoozeHotkeyModifiers") as? UInt32 ?? defaultSnoozeModifiers
+        self.snoozeHotkeyKeyCode = UserDefaults.standard.object(forKey: "snoozeHotkeyKeyCode") as? UInt32 ?? defaultSnoozeKeyCode
 
         // Load UI state
         self.selectedTab = UserDefaults.standard.object(forKey: "selectedTab") as? Int ?? 0
@@ -341,6 +367,11 @@ class Settings: ObservableObject {
     // Get human-readable exit hotkey string
     func getExitHotkeyString() -> String {
         return formatHotkeyString(modifiers: exitHotkeyModifiers, keyCode: exitHotkeyKeyCode)
+    }
+
+    // Get human-readable snooze hotkey string
+    func getSnoozeHotkeyString() -> String {
+        return formatHotkeyString(modifiers: snoozeHotkeyModifiers, keyCode: snoozeHotkeyKeyCode)
     }
 
     private func formatHotkeyString(modifiers: UInt32, keyCode: UInt32) -> String {

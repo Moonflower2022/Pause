@@ -71,6 +71,29 @@ class AppState: NSObject, ObservableObject, AVAudioPlayerDelegate {
         }
     }
 
+    func snoozeSession() {
+        guard isPauseMode else { return }
+
+        // Save the current display text for the snooze label
+        let snoozeLabel = "Snooze of: \(currentDisplayText)"
+
+        // Calculate snooze time BEFORE ending pause mode
+        let snoozeDuration = Settings.shared.snoozeDuration
+        let now = Date()
+        let snoozeDate = now.addingTimeInterval(TimeInterval(snoozeDuration * 60))
+
+        print("Snooze: duration=\(snoozeDuration) min, now=\(now), snoozeDate=\(snoozeDate), interval=\(snoozeDate.timeIntervalSince(now))s")
+
+        // End the current session (not completed)
+        endPauseMode(completed: false)
+
+        // Add a one-time scheduled activation for the snooze
+        let snoozeTime = ScheduledTime(date: snoozeDate, name: snoozeLabel, isRecurring: false)
+        Settings.shared.scheduledTimes.append(snoozeTime)
+
+        print("Snooze scheduled for \(snoozeDuration) minutes from now at \(snoozeDate.formatted(date: .omitted, time: .standard)): '\(snoozeLabel)'")
+    }
+
     func startPauseMode(displayText: String? = nil) {
         isPauseMode = true
 
@@ -102,32 +125,37 @@ class AppState: NSObject, ObservableObject, AVAudioPlayerDelegate {
             }
         }
 
-        // Add event monitor for exit hotkey
+        // Add event monitor for exit and snooze hotkeys
         eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
-            // Check if the pressed key matches the exit hotkey
             let settings = Settings.shared
-            if UInt32(event.keyCode) == settings.exitHotkeyKeyCode {
-                // Convert NSEvent modifiers to Carbon modifiers (only count the ones we care about)
-                var carbonModifiers: UInt32 = 0
-                if event.modifierFlags.contains(.control) {
-                    carbonModifiers |= UInt32(controlKey)
-                }
-                if event.modifierFlags.contains(.option) {
-                    carbonModifiers |= UInt32(optionKey)
-                }
-                if event.modifierFlags.contains(.shift) {
-                    carbonModifiers |= UInt32(shiftKey)
-                }
-                if event.modifierFlags.contains(.command) {
-                    carbonModifiers |= UInt32(cmdKey)
-                }
 
-                // Check if modifiers match (or if no modifiers are required)
-                if carbonModifiers == settings.exitHotkeyModifiers {
-                    self.endPauseMode(completed: false)
-                    return nil // Consume the event
-                }
+            // Convert NSEvent modifiers to Carbon modifiers (only count the ones we care about)
+            var carbonModifiers: UInt32 = 0
+            if event.modifierFlags.contains(.control) {
+                carbonModifiers |= UInt32(controlKey)
             }
+            if event.modifierFlags.contains(.option) {
+                carbonModifiers |= UInt32(optionKey)
+            }
+            if event.modifierFlags.contains(.shift) {
+                carbonModifiers |= UInt32(shiftKey)
+            }
+            if event.modifierFlags.contains(.command) {
+                carbonModifiers |= UInt32(cmdKey)
+            }
+
+            // Check if the pressed key matches the exit hotkey
+            if UInt32(event.keyCode) == settings.exitHotkeyKeyCode && carbonModifiers == settings.exitHotkeyModifiers {
+                self.endPauseMode(completed: false)
+                return nil // Consume the event
+            }
+
+            // Check if the pressed key matches the snooze hotkey
+            if UInt32(event.keyCode) == settings.snoozeHotkeyKeyCode && carbonModifiers == settings.snoozeHotkeyModifiers {
+                self.snoozeSession()
+                return nil // Consume the event
+            }
+
             return event
         }
     }

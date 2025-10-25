@@ -22,6 +22,7 @@ struct ShortcutsSettingsTab: View {
 
             Section {
                 ExitHotkeyRecorderView()
+                SnoozeHotkeyRecorderView()
             } header: {
                 Text("Session Shortcuts")
             } footer: {
@@ -152,6 +153,52 @@ struct ExitHotkeyRecorderView: View {
     }
 }
 
+// Snooze hotkey recorder view
+struct SnoozeHotkeyRecorderView: View {
+    @ObservedObject var settings = Settings.shared
+    @State private var isRecording = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("Snooze Session:")
+                    .frame(width: 140, alignment: .leading)
+                Text(settings.getSnoozeHotkeyString())
+                    .font(.system(.body, design: .monospaced))
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Color.secondary.opacity(0.2))
+                    .cornerRadius(6)
+
+                Spacer()
+
+                Button(action: {
+                    isRecording = true
+                }) {
+                    HStack {
+                        Image(systemName: isRecording ? "record.circle.fill" : "record.circle")
+                            .foregroundColor(isRecording ? .red : .primary)
+                        Text(isRecording ? "Press your key..." : "Record New Hotkey")
+                    }
+                }
+                .buttonStyle(.bordered)
+            }
+        }
+        .textSelection(.enabled)
+        .background(
+            // Invisible overlay to capture key events (allows plain keys)
+            SnoozeKeyEventHandlingView(isRecording: $isRecording) { keyCode, modifiers in
+                if isRecording {
+                    // Update settings with new snooze hotkey
+                    settings.snoozeHotkeyKeyCode = keyCode
+                    settings.snoozeHotkeyModifiers = modifiers
+                    isRecording = false
+                }
+            }
+        )
+    }
+}
+
 // NSView wrapper to capture key events for exit hotkey (allows plain keys)
 struct ExitKeyEventHandlingView: NSViewRepresentable {
     @Binding var isRecording: Bool
@@ -241,5 +288,63 @@ class KeyCaptureView: NSView {
         if carbonModifiers != 0 {
             onKeyPressed?(UInt32(event.keyCode), carbonModifiers)
         }
+    }
+}
+
+// NSView wrapper to capture key events for snooze hotkey (allows plain keys)
+struct SnoozeKeyEventHandlingView: NSViewRepresentable {
+    @Binding var isRecording: Bool
+    var onKeyPressed: (UInt32, UInt32) -> Void
+
+    func makeNSView(context: Context) -> NSView {
+        let view = SnoozeKeyCaptureView()
+        view.onKeyPressed = onKeyPressed
+        view.isRecordingBinding = $isRecording
+        return view
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+        if let keyView = nsView as? SnoozeKeyCaptureView {
+            keyView.isRecordingBinding = $isRecording
+
+            // Auto-focus the view when recording starts
+            if isRecording {
+                DispatchQueue.main.async {
+                    keyView.window?.makeFirstResponder(keyView)
+                }
+            }
+        }
+    }
+}
+
+class SnoozeKeyCaptureView: NSView {
+    var onKeyPressed: ((UInt32, UInt32) -> Void)?
+    var isRecordingBinding: Binding<Bool>?
+
+    override var acceptsFirstResponder: Bool { true }
+
+    override func keyDown(with event: NSEvent) {
+        guard isRecordingBinding?.wrappedValue == true else {
+            super.keyDown(with: event)
+            return
+        }
+
+        // Convert NSEvent modifiers to Carbon modifiers
+        var carbonModifiers: UInt32 = 0
+        if event.modifierFlags.contains(.control) {
+            carbonModifiers |= UInt32(controlKey)
+        }
+        if event.modifierFlags.contains(.option) {
+            carbonModifiers |= UInt32(optionKey)
+        }
+        if event.modifierFlags.contains(.shift) {
+            carbonModifiers |= UInt32(shiftKey)
+        }
+        if event.modifierFlags.contains(.command) {
+            carbonModifiers |= UInt32(cmdKey)
+        }
+
+        // Allow any key (with or without modifiers) for snooze hotkey
+        onKeyPressed?(UInt32(event.keyCode), carbonModifiers)
     }
 }
