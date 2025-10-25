@@ -315,7 +315,7 @@ class Settings: ObservableObject {
             self.scheduledTimes = []
         }
 
-        self.recalculateOnActivation = UserDefaults.standard.object(forKey: "recalculateOnActivation") as? Bool ?? false
+        self.recalculateOnActivation = UserDefaults.standard.object(forKey: "recalculateOnActivation") as? Bool ?? true
 
         // Load activate hotkey settings - default is Command-Shift-P
         let defaultModifiers = UInt32(cmdKey | shiftKey)
