@@ -252,10 +252,10 @@ class Settings: ObservableObject {
         self.soundVolume = UserDefaults.standard.object(forKey: "soundVolume") as? Double ?? 0.5
         self.soundRepeatRate = UserDefaults.standard.object(forKey: "soundRepeatRate") as? Int ?? 0
         self.startSoundEnabled = UserDefaults.standard.object(forKey: "startSoundEnabled") as? Bool ?? true
-        self.startSoundVolume = UserDefaults.standard.object(forKey: "startSoundVolume") as? Double ?? 1.0
+        self.startSoundVolume = UserDefaults.standard.object(forKey: "startSoundVolume") as? Double ?? 0.5
         self.endSoundEnabled = UserDefaults.standard.object(forKey: "endSoundEnabled") as? Bool ?? true
-        self.endSoundVolume = UserDefaults.standard.object(forKey: "endSoundVolume") as? Double ?? 1.0
-        self.showInMenuBar = UserDefaults.standard.object(forKey: "showInMenuBar") as? Bool ?? false
+        self.endSoundVolume = UserDefaults.standard.object(forKey: "endSoundVolume") as? Double ?? 0.5
+        self.showInMenuBar = UserDefaults.standard.object(forKey: "showInMenuBar") as? Bool ?? true
         self.menuBarShowTimer = UserDefaults.standard.object(forKey: "menuBarShowTimer") as? Bool ?? true
         self.sessionDisplayText = UserDefaults.standard.object(forKey: "sessionDisplayText") as? String ?? "Just Breathe"
         self.completedSessions = UserDefaults.standard.object(forKey: "completedSessions") as? Int ?? 0
@@ -283,9 +283,9 @@ class Settings: ObservableObject {
 
         self.recalculateOnActivation = UserDefaults.standard.object(forKey: "recalculateOnActivation") as? Bool ?? false
 
-        // Load hotkey settings - default is Control-Command-0
-        let defaultModifiers = UInt32(controlKey | cmdKey)
-        let defaultKeyCode: UInt32 = 29 // Key code for '0'
+        // Load hotkey settings - default is Command-Shift-P
+        let defaultModifiers = UInt32(cmdKey | shiftKey)
+        let defaultKeyCode: UInt32 = 35 // Key code for 'P'
         self.hotkeyModifiers = UserDefaults.standard.object(forKey: "hotkeyModifiers") as? UInt32 ?? defaultModifiers
         self.hotkeyKeyCode = UserDefaults.standard.object(forKey: "hotkeyKeyCode") as? UInt32 ?? defaultKeyCode
 

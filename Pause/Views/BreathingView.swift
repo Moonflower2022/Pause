@@ -32,13 +32,18 @@ struct BreathingView: View {
                     .foregroundColor(.white)
 
                 // Breathing circle animation
-                Circle()
-                    .fill(Color.white.opacity(0.3))
-                    .frame(width: 200, height: 200)
-                    .overlay(
-                        Circle()
-                            .stroke(Color.white, lineWidth: 2)
-                    )
+                TimelineView(.animation) { context in
+                    let scale = calculateBreathingScale(date: context.date)
+
+                    Circle()
+                        .fill(Color.white.opacity(0.3))
+                        .frame(width: 200, height: 200)
+                        .overlay(
+                            Circle()
+                                .stroke(Color.white, lineWidth: 2)
+                        )
+                        .scaleEffect(scale)
+                }
 
                 // Timer display
                 Text(formatTime(appState.timeRemaining))
@@ -61,6 +66,33 @@ struct BreathingView: View {
         let mins = seconds / 60
         let secs = seconds % 60
         return String(format: "%d:%02d", mins, secs)
+    }
+
+    private func calculateBreathingScale(date: Date) -> Double {
+        // Breathing cycle: 2s inhale + 3s exhale = 5s total
+        let inhaleDuration = 2.0
+        let exhaleDuration = 3.0
+        let totalCycleDuration = inhaleDuration + exhaleDuration
+
+        // Calculate position in the breathing cycle
+        let timeInCycle = date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: totalCycleDuration)
+
+        let scale: Double
+        if timeInCycle < inhaleDuration {
+            // Inhale phase (0s to 2s): grow from 0.8 to 1.2
+            let progress = timeInCycle / inhaleDuration
+            // Use ease-in-out for smooth breathing
+            let eased = (1.0 - cos(progress * .pi)) / 2.0
+            scale = 0.8 + (eased * 0.4)
+        } else {
+            // Exhale phase (2s to 5s): shrink from 1.2 to 0.8
+            let progress = (timeInCycle - inhaleDuration) / exhaleDuration
+            // Use ease-in-out for smooth breathing
+            let eased = (1.0 - cos(progress * .pi)) / 2.0
+            scale = 1.2 - (eased * 0.4)
+        }
+
+        return scale
     }
 }
 

@@ -6,7 +6,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/macOS-15.3+-blue.svg" alt="macOS 15.3+">
+  <img src="https://img.shields.io/badge/macOS-13.0+-blue.svg" alt="macOS 13.0+">
   <img src="https://img.shields.io/badge/Swift-5.0-orange.svg" alt="Swift 5.0">
   <img src="https://img.shields.io/badge/SwiftUI-Native-green.svg" alt="SwiftUI">
 </p>
@@ -23,7 +23,7 @@
 
 ### Core Experience
 - **Immersive fullscreen sessions** with gradient backgrounds and breathing animations
-- **Global hotkey access** (default: `⌃⌘0`) - works even when app is backgrounded
+- **Global hotkey access** (default: `⌘⇧P`) - works even when app is backgrounded
 - **Flexible duration** - 30 seconds to 10 hours (17 preset levels)
 - **Session tracking** - Monitor completed sessions and total meditation time
 
@@ -51,7 +51,7 @@ Three independent activation modes that run simultaneously:
 
 ## 📋 Requirements
 
-- **macOS** 15.3 or later
+- **macOS** 13.0 (Ventura) or later
 - **Xcode** 16.4, Swift 5.0 (for development)
 
 ---
