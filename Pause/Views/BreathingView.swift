@@ -9,6 +9,7 @@ import SwiftUI
 
 struct BreathingView: View {
     @ObservedObject var appState = AppState.shared
+    @ObservedObject var settings = Settings.shared
 
     var body: some View {
         ZStack {
@@ -53,7 +54,7 @@ struct BreathingView: View {
                 Spacer()
 
                 // Instructions
-                Text("Press SPACE to exit early")
+                Text("Press \(settings.getExitHotkeyString()) to exit early")
                     .font(.caption)
                     .foregroundColor(.white.opacity(0.6))
                     .padding(.bottom, 40)

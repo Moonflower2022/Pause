@@ -13,10 +13,11 @@ struct ShortcutsSettingsTab: View {
         Form {
             Section {
                 HotkeyRecorderView()
+                ExitHotkeyRecorderView()
             } header: {
-                Text("Global Hotkeys")
+                Text("Keyboard Shortcuts")
             } footer: {
-                Text("Press the button below and then press your desired key combination")
+                Text("Press the record button and then press your desired key combination")
                     .font(.caption)
             }
         }
@@ -94,6 +95,52 @@ struct KeyEventHandlingView: NSViewRepresentable {
                 }
             }
         }
+    }
+}
+
+// Exit hotkey recorder view
+struct ExitHotkeyRecorderView: View {
+    @ObservedObject var settings = Settings.shared
+    @State private var isRecording = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("Exit Session:")
+                    .frame(width: 140, alignment: .leading)
+                Text(settings.getExitHotkeyString())
+                    .font(.system(.body, design: .monospaced))
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Color.secondary.opacity(0.2))
+                    .cornerRadius(6)
+
+                Spacer()
+
+                Button(action: {
+                    isRecording = true
+                }) {
+                    HStack {
+                        Image(systemName: isRecording ? "record.circle.fill" : "record.circle")
+                            .foregroundColor(isRecording ? .red : .primary)
+                        Text(isRecording ? "Press your key combination..." : "Record New Hotkey")
+                    }
+                }
+                .buttonStyle(.bordered)
+            }
+        }
+        .textSelection(.enabled)
+        .background(
+            // Invisible overlay to capture key events
+            KeyEventHandlingView(isRecording: $isRecording) { keyCode, modifiers in
+                if isRecording {
+                    // Update settings with new exit hotkey
+                    settings.exitHotkeyKeyCode = keyCode
+                    settings.exitHotkeyModifiers = modifiers
+                    isRecording = false
+                }
+            }
+        )
     }
 }
 

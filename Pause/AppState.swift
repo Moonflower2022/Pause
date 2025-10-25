@@ -8,6 +8,7 @@
 import SwiftUI
 import AppKit
 import AVFoundation
+import Carbon.HIToolbox
 
 class AppState: NSObject, ObservableObject, AVAudioPlayerDelegate {
     static let shared = AppState()
@@ -101,11 +102,31 @@ class AppState: NSObject, ObservableObject, AVAudioPlayerDelegate {
             }
         }
 
-        // Add event monitor for spacebar
+        // Add event monitor for exit hotkey
         eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
-            if event.keyCode == 49 { // 49 is the key code for spacebar
-                self.endPauseMode(completed: false)
-                return nil // Consume the event
+            // Check if the pressed key matches the exit hotkey
+            let settings = Settings.shared
+            if UInt32(event.keyCode) == settings.exitHotkeyKeyCode {
+                // Convert NSEvent modifiers to Carbon modifiers
+                var carbonModifiers: UInt32 = 0
+                if event.modifierFlags.contains(.control) {
+                    carbonModifiers |= UInt32(controlKey)
+                }
+                if event.modifierFlags.contains(.option) {
+                    carbonModifiers |= UInt32(optionKey)
+                }
+                if event.modifierFlags.contains(.shift) {
+                    carbonModifiers |= UInt32(shiftKey)
+                }
+                if event.modifierFlags.contains(.command) {
+                    carbonModifiers |= UInt32(cmdKey)
+                }
+
+                // Check if modifiers match
+                if carbonModifiers == settings.exitHotkeyModifiers {
+                    self.endPauseMode(completed: false)
+                    return nil // Consume the event
+                }
             }
             return event
         }

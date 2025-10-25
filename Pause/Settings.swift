@@ -237,6 +237,19 @@ class Settings: ObservableObject {
         }
     }
 
+    // Exit hotkey settings
+    @Published var exitHotkeyModifiers: UInt32 {
+        didSet {
+            UserDefaults.standard.set(exitHotkeyModifiers, forKey: "exitHotkeyModifiers")
+        }
+    }
+
+    @Published var exitHotkeyKeyCode: UInt32 {
+        didSet {
+            UserDefaults.standard.set(exitHotkeyKeyCode, forKey: "exitHotkeyKeyCode")
+        }
+    }
+
     // UI State
     @Published var selectedTab: Int {
         didSet {
@@ -289,6 +302,12 @@ class Settings: ObservableObject {
         self.hotkeyModifiers = UserDefaults.standard.object(forKey: "hotkeyModifiers") as? UInt32 ?? defaultModifiers
         self.hotkeyKeyCode = UserDefaults.standard.object(forKey: "hotkeyKeyCode") as? UInt32 ?? defaultKeyCode
 
+        // Load exit hotkey settings - default is Command-Shift-C
+        let defaultExitModifiers = UInt32(cmdKey | shiftKey)
+        let defaultExitKeyCode: UInt32 = 8 // Key code for 'C'
+        self.exitHotkeyModifiers = UserDefaults.standard.object(forKey: "exitHotkeyModifiers") as? UInt32 ?? defaultExitModifiers
+        self.exitHotkeyKeyCode = UserDefaults.standard.object(forKey: "exitHotkeyKeyCode") as? UInt32 ?? defaultExitKeyCode
+
         // Load UI state
         self.selectedTab = UserDefaults.standard.object(forKey: "selectedTab") as? Int ?? 0
     }
@@ -305,24 +324,33 @@ class Settings: ObservableObject {
 
     // Get human-readable hotkey string
     func getHotkeyString() -> String {
+        return formatHotkeyString(modifiers: hotkeyModifiers, keyCode: hotkeyKeyCode)
+    }
+
+    // Get human-readable exit hotkey string
+    func getExitHotkeyString() -> String {
+        return formatHotkeyString(modifiers: exitHotkeyModifiers, keyCode: exitHotkeyKeyCode)
+    }
+
+    private func formatHotkeyString(modifiers: UInt32, keyCode: UInt32) -> String {
         var parts: [String] = []
 
         // Add modifiers
-        if hotkeyModifiers & UInt32(controlKey) != 0 {
+        if modifiers & UInt32(controlKey) != 0 {
             parts.append("⌃")
         }
-        if hotkeyModifiers & UInt32(optionKey) != 0 {
+        if modifiers & UInt32(optionKey) != 0 {
             parts.append("⌥")
         }
-        if hotkeyModifiers & UInt32(shiftKey) != 0 {
+        if modifiers & UInt32(shiftKey) != 0 {
             parts.append("⇧")
         }
-        if hotkeyModifiers & UInt32(cmdKey) != 0 {
+        if modifiers & UInt32(cmdKey) != 0 {
             parts.append("⌘")
         }
 
         // Add key name
-        parts.append(keyCodeToString(hotkeyKeyCode))
+        parts.append(keyCodeToString(keyCode))
 
         return parts.joined()
     }
