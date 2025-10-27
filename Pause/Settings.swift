@@ -22,6 +22,26 @@ struct ScheduledTime: Codable, Identifiable, Equatable {
     }
 }
 
+struct NoGoTime: Codable, Identifiable, Equatable {
+    var id: UUID
+    var startTime: Date
+    var endTime: Date
+    var name: String
+    var isRecurring: Bool  // true for daily recurring no-go times, false for day-specific
+    var dayOfWeek: Int?  // 1=Sunday, 2=Monday, etc. nil for daily recurring times
+    var creationDate: Date  // Track when this was created (for cleanup)
+
+    init(id: UUID = UUID(), startTime: Date, endTime: Date, name: String = "", isRecurring: Bool = true, dayOfWeek: Int? = nil) {
+        self.id = id
+        self.startTime = startTime
+        self.endTime = endTime
+        self.name = name.isEmpty ? "No-Go Period" : name
+        self.isRecurring = isRecurring
+        self.dayOfWeek = dayOfWeek
+        self.creationDate = Date()
+    }
+}
+
 extension DateFormatter {
     static let shortTimeFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -226,6 +246,21 @@ class Settings: ObservableObject {
         }
     }
 
+    // No-Go times (times when activations should not trigger)
+    @Published var noGoEnabled: Bool {
+        didSet {
+            UserDefaults.standard.set(noGoEnabled, forKey: "noGoEnabled")
+        }
+    }
+
+    @Published var noGoTimes: [NoGoTime] {
+        didSet {
+            if let encoded = try? JSONEncoder().encode(noGoTimes) {
+                UserDefaults.standard.set(encoded, forKey: "noGoTimes")
+            }
+        }
+    }
+
     // Activate session hotkey settings (global)
     @Published var activateHotkeyModifiers: UInt32 {
         didSet {
@@ -316,6 +351,15 @@ class Settings: ObservableObject {
         }
 
         self.recalculateOnActivation = UserDefaults.standard.object(forKey: "recalculateOnActivation") as? Bool ?? true
+
+        // Load no-go times
+        self.noGoEnabled = UserDefaults.standard.object(forKey: "noGoEnabled") as? Bool ?? false
+        if let data = UserDefaults.standard.data(forKey: "noGoTimes"),
+           let decoded = try? JSONDecoder().decode([NoGoTime].self, from: data) {
+            self.noGoTimes = decoded
+        } else {
+            self.noGoTimes = []
+        }
 
         // Load activate hotkey settings - default is Command-Shift-P
         let defaultModifiers = UInt32(cmdKey | shiftKey)
@@ -485,5 +529,97 @@ class Settings: ObservableObject {
         case 126: return "↑"
         default: return "[\(keyCode)]"
         }
+    }
+
+    // MARK: - No-Go Time Management
+
+    func deleteNoGoTime(at offsets: IndexSet) {
+        noGoTimes.remove(atOffsets: offsets)
+    }
+
+    func deleteNoGoTime(id: UUID) {
+        noGoTimes.removeAll { $0.id == id }
+    }
+
+    func clearAllNoGoTimes() {
+        noGoTimes.removeAll()
+    }
+
+    // Clean up today-only no-go times that have expired (moved to next day)
+    // Only removes entries that are today-only (isRecurring=false AND dayOfWeek=nil)
+    func cleanupExpiredNoGoTimes() {
+        let calendar = Calendar.current
+        let now = Date()
+
+        let expiredIds = noGoTimes.compactMap { noGoTime -> UUID? in
+            // Only clean up today-only entries (not day-specific entries with dayOfWeek)
+            guard !noGoTime.isRecurring && noGoTime.dayOfWeek == nil else { return nil }
+
+            // Check if creation date is from a different day than today
+            let creationDay = calendar.startOfDay(for: noGoTime.creationDate)
+            let today = calendar.startOfDay(for: now)
+
+            return creationDay < today ? noGoTime.id : nil
+        }
+
+        // Only modify if there are expired items
+        if !expiredIds.isEmpty {
+            noGoTimes.removeAll { expiredIds.contains($0.id) }
+        }
+    }
+
+    // Check if current time is within a no-go period
+    func isInNoGoTime() -> Bool {
+        guard noGoEnabled else { return false }
+
+        let calendar = Calendar.current
+        let now = Date()
+        let currentWeekday = calendar.component(.weekday, from: now)
+
+        for noGoTime in noGoTimes {
+            // If dayOfWeek is set, check if it matches current day
+            if let dayOfWeek = noGoTime.dayOfWeek {
+                guard dayOfWeek == currentWeekday else { continue }
+            }
+
+            // Extract hour and minute from the stored start/end times
+            let startComponents = calendar.dateComponents([.hour, .minute], from: noGoTime.startTime)
+            let endComponents = calendar.dateComponents([.hour, .minute], from: noGoTime.endTime)
+
+            guard let startHour = startComponents.hour,
+                  let startMinute = startComponents.minute,
+                  let endHour = endComponents.hour,
+                  let endMinute = endComponents.minute else {
+                continue
+            }
+
+            // Create today's start and end times
+            var todayStartComponents = calendar.dateComponents([.year, .month, .day], from: now)
+            todayStartComponents.hour = startHour
+            todayStartComponents.minute = startMinute
+            todayStartComponents.second = 0
+
+            var todayEndComponents = calendar.dateComponents([.year, .month, .day], from: now)
+            todayEndComponents.hour = endHour
+            todayEndComponents.minute = endMinute
+            todayEndComponents.second = 0
+
+            guard let todayStart = calendar.date(from: todayStartComponents),
+                  var todayEnd = calendar.date(from: todayEndComponents) else {
+                continue
+            }
+
+            // Handle case where end time is before start time (crosses midnight)
+            if todayEnd <= todayStart {
+                todayEnd = calendar.date(byAdding: .day, value: 1, to: todayEnd) ?? todayEnd
+            }
+
+            // Check if current time is within the no-go period
+            if now >= todayStart && now <= todayEnd {
+                return true
+            }
+        }
+
+        return false
     }
 }

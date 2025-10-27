@@ -17,10 +17,12 @@ class ActivationScheduler: ObservableObject {
     private var repeatedTimer: Timer?
     private var randomTimer: Timer?
     private var scheduledTimers: [Timer] = []
+    private var cleanupTimer: Timer?
 
     private init() {
         // Initial setup
         updateSchedule()
+        setupCleanupTimer()
     }
 
     func updateSchedule() {
@@ -85,8 +87,15 @@ class ActivationScheduler: ObservableObject {
         }
 
         repeatedTimer = Timer.scheduledTimer(withTimeInterval: intervalSeconds, repeats: true) { [weak self] _ in
-            print("Repeated timer fired - triggering pause mode")
-            AppState.shared.triggerPauseMode()
+            print("Repeated timer fired")
+
+            // Check if we're in a no-go time
+            if Settings.shared.isInNoGoTime() {
+                print("Skipping activation - in no-go time")
+            } else {
+                print("Triggering pause mode")
+                AppState.shared.triggerPauseMode()
+            }
 
             // Update the next fire date for the next interval
             let nextFire = Date().addingTimeInterval(intervalSeconds)
@@ -122,8 +131,15 @@ class ActivationScheduler: ObservableObject {
         print("Next random activation at: \(fireDate.formatted(date: .omitted, time: .shortened))")
 
         randomTimer = Timer.scheduledTimer(withTimeInterval: intervalSeconds, repeats: false) { [weak self] _ in
-            print("Random timer fired - triggering pause mode")
-            AppState.shared.triggerPauseMode()
+            print("Random timer fired")
+
+            // Check if we're in a no-go time
+            if Settings.shared.isInNoGoTime() {
+                print("Skipping activation - in no-go time")
+            } else {
+                print("Triggering pause mode")
+                AppState.shared.triggerPauseMode()
+            }
 
             // Schedule the next random timer
             self?.setupRandomTimer()
@@ -202,8 +218,15 @@ class ActivationScheduler: ObservableObject {
         print("Scheduling \(scheduledTime.isRecurring ? "recurring" : "one-time") timer for '\(scheduledTime.name)' - fires in \(Int(timeInterval/60)) minutes")
 
         let timer = Timer.scheduledTimer(withTimeInterval: timeInterval, repeats: false) { [weak self] _ in
-            print("Scheduled timer fired - triggering pause mode with text: \(scheduledTime.name)")
-            AppState.shared.triggerPauseMode(displayText: scheduledTime.name)
+            print("Scheduled timer fired")
+
+            // Check if we're in a no-go time
+            if Settings.shared.isInNoGoTime() {
+                print("Skipping activation - in no-go time")
+            } else {
+                print("Triggering pause mode with text: \(scheduledTime.name)")
+                AppState.shared.triggerPauseMode(displayText: scheduledTime.name)
+            }
 
             if scheduledTime.isRecurring {
                 // Reschedule for tomorrow and update next scheduled activation
@@ -283,7 +306,31 @@ class ActivationScheduler: ObservableObject {
         nextScheduledActivation = nil
     }
 
+    // MARK: - No-Go Time Cleanup
+
+    private func setupCleanupTimer() {
+        // Calculate time until next midnight
+        let calendar = Calendar.current
+        let now = Date()
+
+        guard let tomorrow = calendar.date(byAdding: .day, value: 1, to: now) else { return }
+        let nextMidnight = calendar.startOfDay(for: tomorrow)
+        let timeUntilMidnight = nextMidnight.timeIntervalSince(now)
+
+        print("Setting up no-go cleanup timer - will run at midnight (in \(Int(timeUntilMidnight/3600)) hours)")
+
+        cleanupTimer = Timer.scheduledTimer(withTimeInterval: timeUntilMidnight, repeats: false) { [weak self] _ in
+            print("Running no-go cleanup at midnight")
+            Settings.shared.cleanupExpiredNoGoTimes()
+
+            // Reschedule for next midnight
+            self?.setupCleanupTimer()
+        }
+    }
+
     deinit {
         clearAllTimers()
+        cleanupTimer?.invalidate()
+        cleanupTimer = nil
     }
 }
