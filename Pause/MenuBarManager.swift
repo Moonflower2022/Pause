@@ -116,6 +116,13 @@ class MenuBarManager: ObservableObject {
         if showTimer, let nextActivation = getNextActivation() {
             // Show countdown timer
             let timeRemaining = max(0, nextActivation.date.timeIntervalSinceNow)
+
+            // If timer hits 0:00, recalculate all timers
+            if timeRemaining <= 0 {
+                print("Timer reached 0:00 - recalculating all timers")
+                ActivationScheduler.shared.recalculateTimers()
+            }
+
             let countdownText = formatCountdown(timeRemaining)
             button.title = countdownText
             button.image = nil
