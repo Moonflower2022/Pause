@@ -35,6 +35,8 @@ struct PauseApp: App {
                 }
             }
         }
+        .windowResizability(.contentSize)
+        .defaultSize(width: 600, height: 550)
     }
 }
 

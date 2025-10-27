@@ -33,31 +33,40 @@ struct NoGoSettingsTab: View {
                     })
                 }
 
-                Button("Add No-Go Time") {
-                    let now = Date()
-                    let calendar = Calendar.current
+                HStack {
+                    Button("Add No-Go Time") {
+                        let now = Date()
+                        let calendar = Calendar.current
 
-                    // Create default start time (e.g., 9 AM)
-                    var startComponents = calendar.dateComponents([.year, .month, .day], from: now)
-                    startComponents.hour = 9
-                    startComponents.minute = 0
+                        // Create default start time (e.g., 9 AM)
+                        var startComponents = calendar.dateComponents([.year, .month, .day], from: now)
+                        startComponents.hour = 9
+                        startComponents.minute = 0
 
-                    // Create default end time (e.g., 5 PM)
-                    var endComponents = calendar.dateComponents([.year, .month, .day], from: now)
-                    endComponents.hour = 17
-                    endComponents.minute = 0
+                        // Create default end time (e.g., 5 PM)
+                        var endComponents = calendar.dateComponents([.year, .month, .day], from: now)
+                        endComponents.hour = 17
+                        endComponents.minute = 0
 
-                    if let startTime = calendar.date(from: startComponents),
-                       let endTime = calendar.date(from: endComponents) {
-                        settings.noGoTimes.append(NoGoTime(
-                            startTime: startTime,
-                            endTime: endTime,
-                            name: "Work Hours",
-                            isRecurring: true
-                        ))
+                        if let startTime = calendar.date(from: startComponents),
+                           let endTime = calendar.date(from: endComponents) {
+                            settings.noGoTimes.append(NoGoTime(
+                                startTime: startTime,
+                                endTime: endTime,
+                                name: "Work Hours",
+                                isRecurring: true
+                            ))
+                        }
                     }
+                    .disabled(!settings.noGoEnabled)
+
+                    Spacer()
+
+                    Button("Clear All") {
+                        settings.noGoTimes.removeAll { $0.isRecurring }
+                    }
+                    .disabled(!settings.noGoEnabled || settings.noGoTimes.filter({ $0.isRecurring }).isEmpty)
                 }
-                .disabled(!settings.noGoEnabled)
             } header: {
                 Text("Daily No-Go Times")
             } footer: {
@@ -73,39 +82,41 @@ struct NoGoSettingsTab: View {
                     })
                 }
 
-                Button("Add Day-Specific No-Go Time") {
-                    let now = Date()
-                    let calendar = Calendar.current
-                    let currentWeekday = calendar.component(.weekday, from: now)
+                HStack {
+                    Button("Add Day-Specific No-Go Time") {
+                        let now = Date()
+                        let calendar = Calendar.current
+                        let currentWeekday = calendar.component(.weekday, from: now)
 
-                    // Create default start time (9 AM)
-                    var startComponents = calendar.dateComponents([.year, .month, .day], from: now)
-                    startComponents.hour = 9
-                    startComponents.minute = 0
+                        // Create default start time (9 AM)
+                        var startComponents = calendar.dateComponents([.year, .month, .day], from: now)
+                        startComponents.hour = 9
+                        startComponents.minute = 0
 
-                    // Create default end time (5 PM)
-                    var endComponents = calendar.dateComponents([.year, .month, .day], from: now)
-                    endComponents.hour = 17
-                    endComponents.minute = 0
+                        // Create default end time (5 PM)
+                        var endComponents = calendar.dateComponents([.year, .month, .day], from: now)
+                        endComponents.hour = 17
+                        endComponents.minute = 0
 
-                    if let startTime = calendar.date(from: startComponents),
-                       let endTime = calendar.date(from: endComponents) {
-                        settings.noGoTimes.append(NoGoTime(
-                            startTime: startTime,
-                            endTime: endTime,
-                            name: "Work Hours",
-                            isRecurring: false,
-                            dayOfWeek: currentWeekday
-                        ))
+                        if let startTime = calendar.date(from: startComponents),
+                           let endTime = calendar.date(from: endComponents) {
+                            settings.noGoTimes.append(NoGoTime(
+                                startTime: startTime,
+                                endTime: endTime,
+                                name: "Work Hours",
+                                isRecurring: false,
+                                dayOfWeek: currentWeekday
+                            ))
+                        }
                     }
-                }
-                .disabled(!settings.noGoEnabled)
+                    .disabled(!settings.noGoEnabled)
 
-                if !settings.noGoTimes.filter({ !$0.isRecurring && $0.dayOfWeek != nil }).isEmpty {
+                    Spacer()
+
                     Button("Clear All Day-Specific") {
                         settings.noGoTimes.removeAll { !$0.isRecurring && $0.dayOfWeek != nil }
                     }
-                    .disabled(!settings.noGoEnabled)
+                    .disabled(!settings.noGoEnabled || settings.noGoTimes.filter({ !$0.isRecurring && $0.dayOfWeek != nil }).isEmpty)
                 }
             } header: {
                 Text("Day-Specific No-Go Times")
@@ -122,37 +133,39 @@ struct NoGoSettingsTab: View {
                     })
                 }
 
-                Button("Add Today No-Go Time") {
-                    let now = Date()
-                    let calendar = Calendar.current
+                HStack {
+                    Button("Add Today No-Go Time") {
+                        let now = Date()
+                        let calendar = Calendar.current
 
-                    // Create default start time (current hour)
-                    var startComponents = calendar.dateComponents([.year, .month, .day, .hour], from: now)
-                    startComponents.minute = 0
+                        // Create default start time (current hour)
+                        var startComponents = calendar.dateComponents([.year, .month, .day, .hour], from: now)
+                        startComponents.minute = 0
 
-                    // Create default end time (current hour + 1)
-                    var endComponents = calendar.dateComponents([.year, .month, .day, .hour], from: now)
-                    endComponents.hour = (endComponents.hour ?? 0) + 1
-                    endComponents.minute = 0
+                        // Create default end time (current hour + 1)
+                        var endComponents = calendar.dateComponents([.year, .month, .day, .hour], from: now)
+                        endComponents.hour = (endComponents.hour ?? 0) + 1
+                        endComponents.minute = 0
 
-                    if let startTime = calendar.date(from: startComponents),
-                       let endTime = calendar.date(from: endComponents) {
-                        settings.noGoTimes.append(NoGoTime(
-                            startTime: startTime,
-                            endTime: endTime,
-                            name: "Focus Time",
-                            isRecurring: false,
-                            dayOfWeek: nil
-                        ))
+                        if let startTime = calendar.date(from: startComponents),
+                           let endTime = calendar.date(from: endComponents) {
+                            settings.noGoTimes.append(NoGoTime(
+                                startTime: startTime,
+                                endTime: endTime,
+                                name: "Focus Time",
+                                isRecurring: false,
+                                dayOfWeek: nil
+                            ))
+                        }
                     }
-                }
-                .disabled(!settings.noGoEnabled)
+                    .disabled(!settings.noGoEnabled)
 
-                if !settings.noGoTimes.filter({ !$0.isRecurring && $0.dayOfWeek == nil }).isEmpty {
+                    Spacer()
+
                     Button("Clear All Today") {
                         settings.noGoTimes.removeAll { !$0.isRecurring && $0.dayOfWeek == nil }
                     }
-                    .disabled(!settings.noGoEnabled)
+                    .disabled(!settings.noGoEnabled || settings.noGoTimes.filter({ !$0.isRecurring && $0.dayOfWeek == nil }).isEmpty)
                 }
             } header: {
                 Text("Today No-Go Times")

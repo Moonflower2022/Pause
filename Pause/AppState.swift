@@ -54,10 +54,14 @@ class AppState: NSObject, ObservableObject, AVAudioPlayerDelegate {
             if self.isPauseMode {
                 print("Window closing during pause mode - ending session")
                 self.endPauseMode(completed: false)
-            }
 
-            // Remove from created windows array if it's there
-            self.createdWindows.removeAll { $0 === window }
+                // Only remove fullscreen windows from array when in pause mode
+                // Settings windows should stay in the array for reuse
+                if window.styleMask.contains(.fullScreen) {
+                    self.createdWindows.removeAll { $0 === window }
+                }
+            }
+            // Don't remove settings windows from createdWindows - keep them for reuse
         }
     }
 
