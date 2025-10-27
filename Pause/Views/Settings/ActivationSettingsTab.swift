@@ -97,70 +97,71 @@ struct ActivationSettingsTab: View {
                 Toggle("Scheduled", isOn: $settings.scheduledEnabled)
                     .toggleStyle(.switch)
 
-                if settings.scheduledEnabled {
-                    ForEach($settings.scheduledTimes) { $scheduledTime in
-                        HStack(alignment: .center, spacing: 8) {
-                            TextField("Label:", text: $scheduledTime.name)
-                                .textFieldStyle(.roundedBorder)
-                                .frame(minWidth: 80, maxWidth: 200)
-                                .multilineTextAlignment(.leading)
-
-                            Spacer()
-
-                            DatePicker("", selection: $scheduledTime.date, displayedComponents: .hourAndMinute)
-                                .labelsHidden()
-
-                            Button(action: {
-                                settings.deleteScheduledTime(id: scheduledTime.id)
-                            }) {
-                                Image(systemName: "trash")
-                                    .foregroundColor(.red)
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                    .onDelete { indices in
-                        settings.deleteScheduledTime(at: indices)
-                    }
-
-                    HStack {
-                        Button("Add Time") {
-                            settings.scheduledTimes.append(ScheduledTime(date: Date()))
-                        }
+                ForEach($settings.scheduledTimes) { $scheduledTime in
+                    HStack(alignment: .center, spacing: 8) {
+                        TextField("Label:", text: $scheduledTime.name)
+                            .textFieldStyle(.roundedBorder)
+                            .frame(minWidth: 80, maxWidth: 200)
+                            .multilineTextAlignment(.leading)
 
                         Spacer()
 
-                        Button("Clear All") {
-                            settings.clearAllScheduledTimes()
-                        }
-                        .disabled(settings.scheduledTimes.isEmpty)
+                        DatePicker("", selection: $scheduledTime.date, displayedComponents: .hourAndMinute)
+                            .labelsHidden()
 
                         Button(action: {
-                            settings.undo()
+                            settings.deleteScheduledTime(id: scheduledTime.id)
                         }) {
-                            Image(systemName: "arrow.uturn.backward")
+                            Image(systemName: "trash")
+                                .foregroundColor(.red)
                         }
-                        .disabled(!settings.canUndo)
                         .buttonStyle(.plain)
-                        .help("Undo (⌘Z)")
-                        .keyboardShortcut("z", modifiers: .command)
-
-                        Button(action: {
-                            settings.redo()
-                        }) {
-                            Image(systemName: "arrow.uturn.forward")
-                        }
-                        .disabled(!settings.canRedo)
-                        .buttonStyle(.plain)
-                        .help("Redo (⌘⇧Z)")
-                        .keyboardShortcut("z", modifiers: [.command, .shift])
                     }
+                }
+                .onDelete { indices in
+                    settings.deleteScheduledTime(at: indices)
+                }
+
+                HStack {
+                    Button("Add Time") {
+                        settings.scheduledTimes.append(ScheduledTime(date: Date()))
+                    }
+
+                    Spacer()
+
+                    Button("Clear All") {
+                        settings.clearAllScheduledTimes()
+                    }
+                    .disabled(settings.scheduledTimes.isEmpty)
+
+                    Button(action: {
+                        settings.undo()
+                    }) {
+                        Image(systemName: "arrow.uturn.backward")
+                    }
+                    .disabled(!settings.canUndo)
+                    .buttonStyle(.plain)
+                    .help("Undo (⌘Z)")
+                    .keyboardShortcut("z", modifiers: .command)
+
+                    Button(action: {
+                        settings.redo()
+                    }) {
+                        Image(systemName: "arrow.uturn.forward")
+                    }
+                    .disabled(!settings.canRedo)
+                    .buttonStyle(.plain)
+                    .help("Redo (⌘⇧Z)")
+                    .keyboardShortcut("z", modifiers: [.command, .shift])
                 }
             } header: {
                 Text("Scheduled Activation")
             } footer: {
                 if settings.scheduledEnabled {
                     Text("Pause will trigger at the specified times each day")
+                        .font(.caption)
+                } else {
+                    Text("Scheduled activation is disabled. Times below will not trigger.")
                         .font(.caption)
                 }
             }
