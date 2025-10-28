@@ -9,9 +9,52 @@ import SwiftUI
 
 struct DetectionSettingsTab: View {
     @ObservedObject var settings = Settings.shared
+    @ObservedObject var detector = InputDetectionManager.shared
 
     var body: some View {
         Form {
+            // System status
+            Section {
+                HStack {
+                    Text("Input Monitoring Permission")
+                        .frame(width: 180, alignment: .leading)
+                    Spacer()
+                    if detector.hasAccessibilityPermission {
+                        Text("✅ Granted")
+                            .foregroundColor(.green)
+                    } else {
+                        Text("❌ Not Granted")
+                            .foregroundColor(.red)
+                    }
+                }
+
+                HStack {
+                    Text("Events Received")
+                        .frame(width: 180, alignment: .leading)
+                    Spacer()
+                    Text("\(detector.totalEventsReceived)")
+                        .monospacedDigit()
+                        .foregroundColor(detector.totalEventsReceived > 0 ? .green : .secondary)
+                }
+
+                if !detector.hasAccessibilityPermission {
+                    Button("Open System Settings") {
+                        NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_InputMonitoring")!)
+                    }
+                }
+            } header: {
+                Text("System Status")
+            } footer: {
+                if detector.hasAccessibilityPermission {
+                    Text("Input detection is active and monitoring keyboard/mouse events. Events received: \(detector.totalEventsReceived). Check Console.app for detailed logs (search for 'InputDetectionManager').")
+                        .font(.caption)
+                } else {
+                    Text("Input Monitoring permission is required to monitor input events. Grant permission in System Settings → Privacy & Security → Input Monitoring, then restart the app.")
+                        .font(.caption)
+                        .foregroundColor(.red)
+                }
+            }
+
             // Main detection toggle and logic
             Section {
                 Toggle("Enable Detection", isOn: $settings.detectionEnabled)
@@ -61,10 +104,20 @@ struct DetectionSettingsTab: View {
                             .frame(width: 50, alignment: .trailing)
                             .monospacedDigit()
                     }
+
+                    HStack {
+                        Text("Current Count")
+                            .frame(width: 140, alignment: .leading)
+                        Spacer()
+                        Text("\(detector.currentCount1)")
+                            .frame(width: 50, alignment: .trailing)
+                            .monospacedDigit()
+                            .foregroundColor(detector.currentCount1 >= settings.detectionCountThreshold1 ? .red : .primary)
+                    }
                 } header: {
                     Text("Threshold 1")
                 } footer: {
-                    Text("Triggers when \(settings.detectionCountThreshold1) inputs occur with less than \(String(format: "%.1f", settings.detectionLatency1))s between them")
+                    Text("Triggers when \(settings.detectionCountThreshold1) inputs occur with less than \(String(format: "%.1f", settings.detectionLatency1))s between them. Current: \(detector.currentCount1)")
                         .font(.caption)
                 }
             }
@@ -92,10 +145,20 @@ struct DetectionSettingsTab: View {
                             .frame(width: 50, alignment: .trailing)
                             .monospacedDigit()
                     }
+
+                    HStack {
+                        Text("Current Count")
+                            .frame(width: 140, alignment: .leading)
+                        Spacer()
+                        Text("\(detector.currentCount2)")
+                            .frame(width: 50, alignment: .trailing)
+                            .monospacedDigit()
+                            .foregroundColor(detector.currentCount2 >= settings.detectionCountThreshold2 ? .red : .primary)
+                    }
                 } header: {
                     Text("Threshold 2")
                 } footer: {
-                    Text("Triggers when \(settings.detectionCountThreshold2) inputs occur with less than \(String(format: "%.1f", settings.detectionLatency2))s between them")
+                    Text("Triggers when \(settings.detectionCountThreshold2) inputs occur with less than \(String(format: "%.1f", settings.detectionLatency2))s between them. Current: \(detector.currentCount2)")
                         .font(.caption)
                 }
             }

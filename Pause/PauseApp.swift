@@ -22,6 +22,9 @@ struct PauseApp: App {
 
         // Initialize the menu bar manager
         _ = MenuBarManager.shared
+
+        // Initialize the input detection manager
+        _ = InputDetectionManager.shared
     }
 
     var body: some Scene {
