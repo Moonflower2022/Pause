@@ -58,6 +58,43 @@ class Settings: ObservableObject {
     private var redoStack: [[ScheduledTime]] = []
     private let maxUndoStackSize = 50
 
+    @Published var detectionEnabled: Bool {
+        didSet {
+            UserDefaults.standard.set(detectionEnabled, forKey: "detectionEnabled")
+        }
+    }
+    
+    @Published var andEnabled: Bool {
+        didSet {
+            UserDefaults.standard.set(andEnabled, forKey: "andEnabled")
+        }
+    }
+    
+
+    @Published var detectionLatency1: Double {
+        didSet {
+            UserDefaults.standard.set(detectionLatency1, forKey: "detectionLatency1")
+        }
+    }
+    
+    @Published var detectionCountThreshold1: Int {
+        didSet {
+            UserDefaults.standard.set(detectionCountThreshold1, forKey: "detectionCountThreshold1")
+        }
+    }
+
+    @Published var detectionLatency2: Double {
+        didSet {
+            UserDefaults.standard.set(detectionLatency2, forKey: "detectionLatency2")
+        }
+    }
+
+    @Published var detectionCountThreshold2: Int {
+        didSet {
+            UserDefaults.standard.set(detectionCountThreshold2, forKey: "detectionCountThreshold2")
+        }
+    }
+
     @Published var pauseDuration: Int {
         didSet {
             UserDefaults.standard.set(pauseDuration, forKey: "pauseDuration")
@@ -315,6 +352,12 @@ class Settings: ObservableObject {
 
     private init() {
         // Load from UserDefaults with default values
+        self.detectionEnabled = UserDefaults.standard.object(forKey: "detectionEnabled") as? Bool ?? true
+        self.andEnabled = UserDefaults.standard.object(forKey: "andEnabled") as? Bool ?? true
+        self.detectionLatency1 = UserDefaults.standard.object(forKey: "detectionLatency1") as? Double ?? 0.5
+        self.detectionCountThreshold1 = UserDefaults.standard.object(forKey: "detectionCountThreshold1") as? Int ?? 60
+        self.detectionLatency2 = UserDefaults.standard.object(forKey: "detectionLatency2") as? Double ?? 2
+        self.detectionCountThreshold2 = UserDefaults.standard.object(forKey: "detectionCountThreshold2") as? Int ?? 60
         self.pauseDuration = UserDefaults.standard.object(forKey: "pauseDuration") as? Int ?? 60
         self.pauseVariance = UserDefaults.standard.object(forKey: "pauseVariance") as? Int ?? 0
         self.soundEnabled = UserDefaults.standard.object(forKey: "soundEnabled") as? Bool ?? true
