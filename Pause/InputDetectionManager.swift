@@ -14,7 +14,7 @@ class InputDetectionManager: ObservableObject {
 
     @Published var currentCount1: Int = 0
     @Published var currentCount2: Int = 0
-    @Published var hasAccessibilityPermission: Bool = false
+    @Published var hasInputMonitoringPermission: Bool = false
     @Published var totalEventsReceived: Int = 0
 
     private var eventTap: CFMachPort?
@@ -27,7 +27,7 @@ class InputDetectionManager: ObservableObject {
 
     private init() {
         print("🔍 InputDetectionManager: Initializing...")
-        checkAccessibilityPermissions()
+        checkInputMonitoringPermission()
         setupEventTap()
 
         // Update counts whenever timestamps change
@@ -38,20 +38,20 @@ class InputDetectionManager: ObservableObject {
             }
             .store(in: &cancellables)
 
-        print("🔍 InputDetectionManager: Initialization complete. Permission: \(hasAccessibilityPermission)")
+        print("🔍 InputDetectionManager: Initialization complete. Permission: \(hasInputMonitoringPermission)")
     }
 
-    private func checkAccessibilityPermissions() {
+    private func checkInputMonitoringPermission() {
         // Check Input Monitoring permission (for listening to events)
         let status = IOHIDCheckAccess(kIOHIDRequestTypeListenEvent)
-        hasAccessibilityPermission = (status == kIOHIDAccessTypeGranted)
+        hasInputMonitoringPermission = (status == kIOHIDAccessTypeGranted)
 
         print("🔍 InputDetectionManager: Input Monitoring permission status: \(status.rawValue)")
         print("   kIOHIDAccessTypeGranted = \(kIOHIDAccessTypeGranted.rawValue)")
         print("   kIOHIDAccessTypeDenied = \(kIOHIDAccessTypeDenied.rawValue)")
         print("   kIOHIDAccessTypeUnknown = \(kIOHIDAccessTypeUnknown.rawValue)")
 
-        if !hasAccessibilityPermission {
+        if !hasInputMonitoringPermission {
             print("⚠️ InputDetectionManager: NO INPUT MONITORING PERMISSION!")
             print("⚠️ Go to: System Settings → Privacy & Security → Input Monitoring")
             print("⚠️ Add Pause to the list and enable it")
@@ -61,8 +61,8 @@ class InputDetectionManager: ObservableObject {
             print("🔍 InputDetectionManager: Permission request result: \(requestStatus)")
 
             // Re-check after request
-            hasAccessibilityPermission = IOHIDCheckAccess(kIOHIDRequestTypeListenEvent) == kIOHIDAccessTypeGranted
-            print("🔍 InputDetectionManager: Permission after request: \(hasAccessibilityPermission)")
+            hasInputMonitoringPermission = IOHIDCheckAccess(kIOHIDRequestTypeListenEvent) == kIOHIDAccessTypeGranted
+            print("🔍 InputDetectionManager: Permission after request: \(hasInputMonitoringPermission)")
         }
     }
 

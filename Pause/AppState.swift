@@ -220,17 +220,22 @@ class AppState: NSObject, ObservableObject, AVAudioPlayerDelegate {
 
         // Find existing window - look for the Pause window (from WindowGroup or previously created)
         let window = NSApplication.shared.windows.first { window in
-            // Look for titled windows named "Pause" or with SwiftUI content
-            return window.title == "Pause" && window.styleMask.contains(.titled)
+            // Look for our main Pause window regardless of current style mask
+            return window.title == "Pause"
         }
 
         if let window = window {
             // Use existing window
             window.makeKeyAndOrderFront(nil)
 
-            // Only toggle fullscreen if not already fullscreen
-            if !window.styleMask.contains(.fullScreen) {
-                window.toggleFullScreen(nil)
+            // Ensure Mission Control treats this as the primary fullscreen window
+            window.collectionBehavior.insert(.fullScreenPrimary)
+
+            DispatchQueue.main.async {
+                // Only toggle fullscreen if not already fullscreen
+                if !window.styleMask.contains(.fullScreen) {
+                    window.toggleFullScreen(nil)
+                }
             }
         } else {
             // No window exists, create one manually
@@ -244,6 +249,8 @@ class AppState: NSObject, ObservableObject, AVAudioPlayerDelegate {
             newWindow.title = "Pause"
             newWindow.setFrameAutosaveName("Main Window")
             newWindow.isReleasedWhenClosed = false  // Keep window alive when closed
+
+            newWindow.collectionBehavior.insert(.fullScreenPrimary)
 
             // Create ContentView with shared state
             newWindow.contentView = NSHostingView(rootView: ContentView())

@@ -19,7 +19,7 @@ struct DetectionSettingsTab: View {
                     Text("Input Monitoring Permission")
                         .frame(width: 180, alignment: .leading)
                     Spacer()
-                    if detector.hasAccessibilityPermission {
+                    if detector.hasInputMonitoringPermission {
                         Text("✅ Granted")
                             .foregroundColor(.green)
                     } else {
@@ -37,7 +37,7 @@ struct DetectionSettingsTab: View {
                         .foregroundColor(detector.totalEventsReceived > 0 ? .green : .secondary)
                 }
 
-                if !detector.hasAccessibilityPermission {
+                if !detector.hasInputMonitoringPermission {
                     Button("Open System Settings") {
                         NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent")!)
                     }
@@ -45,7 +45,7 @@ struct DetectionSettingsTab: View {
             } header: {
                 Text("System Status")
             } footer: {
-                if detector.hasAccessibilityPermission {
+                if detector.hasInputMonitoringPermission {
                     Text("Input detection is active and monitoring keyboard/mouse events. Events received: \(detector.totalEventsReceived). Check Console.app for detailed logs (search for 'InputDetectionManager').")
                         .font(.caption)
                 } else {
