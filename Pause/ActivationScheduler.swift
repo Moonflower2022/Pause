@@ -328,6 +328,42 @@ class ActivationScheduler: ObservableObject {
         }
     }
 
+    // MARK: - Helper Methods
+
+    /// Returns the next activation time and its type (Repeated, Random, or Scheduled)
+    func getNextActivation() -> (date: Date, type: String)? {
+        var soonest: (date: Date, type: String)?
+
+        // Check repeated timer
+        if let repeatedDate = nextRepeatedActivation {
+            soonest = (repeatedDate, "Repeated")
+        }
+
+        // Check random timer
+        if let randomDate = nextRandomActivation {
+            if let current = soonest {
+                if randomDate < current.date {
+                    soonest = (randomDate, "Random")
+                }
+            } else {
+                soonest = (randomDate, "Random")
+            }
+        }
+
+        // Check scheduled timer
+        if let scheduledDate = nextScheduledActivation {
+            if let current = soonest {
+                if scheduledDate < current.date {
+                    soonest = (scheduledDate, "Scheduled")
+                }
+            } else {
+                soonest = (scheduledDate, "Scheduled")
+            }
+        }
+
+        return soonest
+    }
+
     deinit {
         clearAllTimers()
         cleanupTimer?.invalidate()

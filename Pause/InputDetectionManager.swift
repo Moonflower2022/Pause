@@ -21,6 +21,7 @@ class InputDetectionManager: ObservableObject {
     private var runLoopSource: CFRunLoopSource?
     private var eventTimestamps: [Date] = []
     private let maxTimestampHistory = 300 // Keep last 300 events
+    private let eventQueue = DispatchQueue(label: "com.pause.inputdetection", qos: .userInteractive)
 
     private let settings = Settings.shared
     private var cancellables = Set<AnyCancellable>()
@@ -111,34 +112,43 @@ class InputDetectionManager: ObservableObject {
     }
 
     private func handleEvent(type: CGEventType, event: CGEvent) {
-        totalEventsReceived += 1
+        eventQueue.async { [weak self] in
+            guard let self = self else { return }
 
-        // Log first few events to confirm it's working
-        if totalEventsReceived <= 5 {
-            print("📥 InputDetectionManager: Event #\(totalEventsReceived) received (type: \(type.rawValue))")
-        } else if totalEventsReceived == 6 {
-            print("📥 InputDetectionManager: Event tap is working! (suppressing further event logs)")
-        }
+            let eventCount = self.totalEventsReceived + 1
 
-        guard settings.detectionEnabled else {
-            if totalEventsReceived <= 3 {
-                print("⚠️ InputDetectionManager: Detection is DISABLED in settings")
+            // Update @Published property on main thread
+            DispatchQueue.main.async {
+                self.totalEventsReceived = eventCount
             }
-            return
+
+            // Log first few events to confirm it's working
+            if eventCount <= 5 {
+                print("📥 InputDetectionManager: Event #\(eventCount) received (type: \(type.rawValue))")
+            } else if eventCount == 6 {
+                print("📥 InputDetectionManager: Event tap is working! (suppressing further event logs)")
+            }
+
+            guard self.settings.detectionEnabled else {
+                if eventCount <= 3 {
+                    print("⚠️ InputDetectionManager: Detection is DISABLED in settings")
+                }
+                return
+            }
+
+            // Record timestamp
+            let now = Date()
+            self.eventTimestamps.append(now)
+
+            // Keep only recent timestamps
+            if self.eventTimestamps.count > self.maxTimestampHistory {
+                self.eventTimestamps.removeFirst()
+            }
+
+            // Update counts directly (we're already on eventQueue)
+            self.updateCountsInternal()
+            self.checkThresholds()
         }
-
-        // Record timestamp
-        let now = Date()
-        eventTimestamps.append(now)
-
-        // Keep only recent timestamps
-        if eventTimestamps.count > maxTimestampHistory {
-            eventTimestamps.removeFirst()
-        }
-
-        // Update counts and check thresholds
-        updateCounts()
-        checkThresholds()
     }
 
     private func updateCounts() {
@@ -148,11 +158,18 @@ class InputDetectionManager: ObservableObject {
             return
         }
 
+        // Called from timer - dispatch to eventQueue
+        eventQueue.async { [weak self] in
+            self?.updateCountsInternal()
+        }
+    }
+
+    private func updateCountsInternal() {
+        // Must be called on eventQueue
         let now = Date()
         let latency1 = settings.detectionLatency1
         let latency2 = settings.detectionLatency2
 
-        // Count events within each latency window
         var count1 = 0
         var count2 = 0
 
@@ -179,8 +196,10 @@ class InputDetectionManager: ObservableObject {
             }
         }
 
-        currentCount1 = count1
-        currentCount2 = count2
+        DispatchQueue.main.async {
+            self.currentCount1 = count1
+            self.currentCount2 = count2
+        }
     }
 
     private func checkThresholds() {

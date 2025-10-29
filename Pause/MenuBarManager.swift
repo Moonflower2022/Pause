@@ -16,19 +16,7 @@ class MenuBarManager: ObservableObject {
     private var updateTimer: Timer?
 
     private init() {
-        // Subscribe to settings changes
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(settingsChanged),
-            name: NSNotification.Name("SettingsChanged"),
-            object: nil
-        )
-
         // Initialize based on current setting
-        updateMenuBarVisibility()
-    }
-
-    @objc private func settingsChanged() {
         updateMenuBarVisibility()
     }
 
@@ -113,7 +101,7 @@ class MenuBarManager: ObservableObject {
 
         let showTimer = Settings.shared.menuBarShowTimer
 
-        if showTimer, let nextActivation = getNextActivation() {
+        if showTimer, let nextActivation = ActivationScheduler.shared.getNextActivation() {
             // Show countdown timer
             let timeRemaining = max(0, nextActivation.date.timeIntervalSinceNow)
 
@@ -133,40 +121,6 @@ class MenuBarManager: ObservableObject {
             image?.isTemplate = true
             button.image = image
         }
-    }
-
-    private func getNextActivation() -> (date: Date, type: String)? {
-        let scheduler = ActivationScheduler.shared
-        var soonest: (date: Date, type: String)?
-
-        // Check repeated timer
-        if let repeatedDate = scheduler.nextRepeatedActivation {
-            soonest = (repeatedDate, "Repeated")
-        }
-
-        // Check random timer
-        if let randomDate = scheduler.nextRandomActivation {
-            if let current = soonest {
-                if randomDate < current.date {
-                    soonest = (randomDate, "Random")
-                }
-            } else {
-                soonest = (randomDate, "Random")
-            }
-        }
-
-        // Check scheduled timer
-        if let scheduledDate = scheduler.nextScheduledActivation {
-            if let current = soonest {
-                if scheduledDate < current.date {
-                    soonest = (scheduledDate, "Scheduled")
-                }
-            } else {
-                soonest = (scheduledDate, "Scheduled")
-            }
-        }
-
-        return soonest
     }
 
     private func formatCountdown(_ seconds: TimeInterval) -> String {

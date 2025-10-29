@@ -39,7 +39,9 @@ struct DetectionSettingsTab: View {
 
                 if !detector.hasInputMonitoringPermission {
                     Button("Open System Settings") {
-                        NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent")!)
+                        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent") {
+                            NSWorkspace.shared.open(url)
+                        }
                     }
                 }
             } header: {

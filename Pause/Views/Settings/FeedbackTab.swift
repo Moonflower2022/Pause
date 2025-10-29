@@ -29,8 +29,9 @@ struct FeedbackTab: View {
 
             Section {
                 Button(action: {
-                    let url = URL(string: "https://github.com/Moonflower2022/Pause/issues")!
-                    NSWorkspace.shared.open(url)
+                    if let url = URL(string: "https://github.com/Moonflower2022/Pause/issues") {
+                        NSWorkspace.shared.open(url)
+                    }
                 }) {
                     HStack {
                         Image(systemName: "ladybug")
@@ -58,8 +59,9 @@ struct FeedbackTab: View {
                     let body = "\n\n---\nSystem Info:\n\(getSystemInfo())"
                     let encodedSubject = subject.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
                     let encodedBody = body.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-                    let url = URL(string: "mailto:harrisonq125@gmail.com?subject=\(encodedSubject)&body=\(encodedBody)")!
-                    NSWorkspace.shared.open(url)
+                    if let url = URL(string: "mailto:harrisonq125@gmail.com?subject=\(encodedSubject)&body=\(encodedBody)") {
+                        NSWorkspace.shared.open(url)
+                    }
                 }) {
                     HStack {
                         Image(systemName: "envelope")
@@ -83,8 +85,9 @@ struct FeedbackTab: View {
                 .padding(.vertical, 4)
 
                 Button(action: {
-                    let url = URL(string: "https://docs.google.com/forms/d/e/1FAIpQLScW_Iycy4GWWOVnxGP5z7qnB-CbKSJ4cFZe5V5G9G6Xf0rmuw/viewform?usp=publish-editor")!
-                    NSWorkspace.shared.open(url)
+                    if let url = URL(string: "https://docs.google.com/forms/d/e/1FAIpQLScW_Iycy4GWWOVnxGP5z7qnB-CbKSJ4cFZe5V5G9G6Xf0rmuw/viewform?usp=publish-editor") {
+                        NSWorkspace.shared.open(url)
+                    }
                 }) {
                     HStack {
                         Image(systemName: "doc.text")

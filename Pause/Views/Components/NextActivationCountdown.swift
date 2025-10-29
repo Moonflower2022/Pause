@@ -13,7 +13,7 @@ struct NextActivationCountdown: View {
     @State private var timer: Timer?
 
     var body: some View {
-        if let nextActivation = getNextActivation() {
+        if let nextActivation = scheduler.getNextActivation() {
             VStack(alignment: .trailing, spacing: 4) {
                 Text("Next: \(nextActivation.type)")
                     .font(.caption)
@@ -50,41 +50,8 @@ struct NextActivationCountdown: View {
         }
     }
 
-    private func getNextActivation() -> (date: Date, type: String)? {
-        var soonest: (date: Date, type: String)?
-
-        // Check repeated timer
-        if let repeatedDate = scheduler.nextRepeatedActivation {
-            soonest = (repeatedDate, "Repeated")
-        }
-
-        // Check random timer
-        if let randomDate = scheduler.nextRandomActivation {
-            if let current = soonest {
-                if randomDate < current.date {
-                    soonest = (randomDate, "Random")
-                }
-            } else {
-                soonest = (randomDate, "Random")
-            }
-        }
-
-        // Check scheduled timer
-        if let scheduledDate = scheduler.nextScheduledActivation {
-            if let current = soonest {
-                if scheduledDate < current.date {
-                    soonest = (scheduledDate, "Scheduled")
-                }
-            } else {
-                soonest = (scheduledDate, "Scheduled")
-            }
-        }
-
-        return soonest
-    }
-
     private func updateTimeRemaining() {
-        if let nextActivation = getNextActivation() {
+        if let nextActivation = scheduler.getNextActivation() {
             timeRemaining = max(0, nextActivation.date.timeIntervalSinceNow)
         } else {
             timeRemaining = 0

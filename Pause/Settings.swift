@@ -673,9 +673,9 @@ class Settings: ObservableObject {
         detectionEnabled = true
         andEnabled = true
         detectionLatency1 = 0.5
-        detectionCountThreshold1 = 60
+        detectionCountThreshold1 = 1000
         detectionLatency2 = 2
-        detectionCountThreshold2 = 60
+        detectionCountThreshold2 = 6000
 
         // Session settings
         pauseDuration = 60

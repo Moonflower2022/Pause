@@ -120,7 +120,8 @@ class AppState: NSObject, ObservableObject, AVAudioPlayerDelegate {
         }
 
         // Start the countdown timer
-        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
+        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            guard let self = self else { return }
             if self.timeRemaining > 0 {
                 self.timeRemaining -= 1
             } else {
