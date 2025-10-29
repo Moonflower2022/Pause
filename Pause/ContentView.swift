@@ -70,6 +70,7 @@ struct SettingsView: View {
                 TabButton(icon: "eye", label: "Detection", tag: 4, selectedTab: $settings.selectedTab)
                 TabButton(icon: "hand.raised", label: "No-Go", tag: 5, selectedTab: $settings.selectedTab)
                 TabButton(icon: "command", label: "Shortcuts", tag: 6, selectedTab: $settings.selectedTab)
+                TabButton(icon: "envelope.badge", label: "Feedback", tag: 7, selectedTab: $settings.selectedTab)
             }
             .padding(.vertical, 16)
 
@@ -92,6 +93,8 @@ struct SettingsView: View {
                     NoGoSettingsTab()
                 case 6:
                     ShortcutsSettingsTab()
+                case 7:
+                    FeedbackTab()
                 default:
                     GeneralSettingsTab()
                 }
