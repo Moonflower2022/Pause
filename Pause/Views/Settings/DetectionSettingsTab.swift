@@ -101,9 +101,9 @@ struct DetectionSettingsTab: View {
                         Slider(value: Binding(
                             get: { Double(settings.detectionCountThreshold1) },
                             set: { settings.detectionCountThreshold1 = Int($0) }
-                        ), in: 10...200, step: 5)
+                        ), in: 10...10000, step: 50)
                         Text("\(settings.detectionCountThreshold1)")
-                            .frame(width: 50, alignment: .trailing)
+                            .frame(width: 60, alignment: .trailing)
                             .monospacedDigit()
                     }
 
@@ -142,9 +142,9 @@ struct DetectionSettingsTab: View {
                         Slider(value: Binding(
                             get: { Double(settings.detectionCountThreshold2) },
                             set: { settings.detectionCountThreshold2 = Int($0) }
-                        ), in: 10...200, step: 5)
+                        ), in: 10...10000, step: 50)
                         Text("\(settings.detectionCountThreshold2)")
-                            .frame(width: 50, alignment: .trailing)
+                            .frame(width: 60, alignment: .trailing)
                             .monospacedDigit()
                     }
 
