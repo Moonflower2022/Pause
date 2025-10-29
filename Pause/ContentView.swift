@@ -101,7 +101,7 @@ struct SettingsView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .frame(minWidth: 650, maxWidth: 650, minHeight: 550, maxHeight: 550)
+        .frame(minWidth: 700, maxWidth: 700, minHeight: 550, maxHeight: 550)
         .textSelection(.enabled)
     }
 }
