@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		05A8B5B32EB1BFD600B69E83 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 05A8B5B22EB1BFD600B69E83 /* Sparkle */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		05F636F22EA9EDFF0011F1E9 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -57,6 +61,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				05A8B5B32EB1BFD600B69E83 /* Sparkle in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -77,6 +82,13 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		05A8B5B12EB1BFD600B69E83 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		05F636DA2EA9EDFE0011F1E9 = {
 			isa = PBXGroup;
 			children = (
@@ -84,6 +96,7 @@
 				05F636E52EA9EDFE0011F1E9 /* Pause */,
 				05F636F42EA9EDFF0011F1E9 /* PauseTests */,
 				05F636FE2EA9EDFF0011F1E9 /* PauseUITests */,
+				05A8B5B12EB1BFD600B69E83 /* Frameworks */,
 				05F636E42EA9EDFE0011F1E9 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -119,6 +132,7 @@
 			);
 			name = Pause;
 			packageProductDependencies = (
+				05A8B5B22EB1BFD600B69E83 /* Sparkle */,
 			);
 			productName = Pause;
 			productReference = 05F636E32EA9EDFE0011F1E9 /* Pause.app */;
@@ -202,6 +216,9 @@
 			);
 			mainGroup = 05F636DA2EA9EDFE0011F1E9;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				05A8B5AB2EB1BC5C00B69E83 /* XCRemoteSwiftPackageReference "Sparkle" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 05F636E42EA9EDFE0011F1E9 /* Products */;
 			projectDirPath = "";
@@ -405,6 +422,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Pause/Info.plist;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -430,6 +448,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Pause/Info.plist;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -548,6 +567,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		05A8B5AB2EB1BC5C00B69E83 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.8.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		05A8B5B22EB1BFD600B69E83 /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 05A8B5AB2EB1BC5C00B69E83 /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 05F636DB2EA9EDFE0011F1E9 /* Project object */;
 }

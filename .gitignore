@@ -30,3 +30,7 @@ Sparkle*.tar.xz
 Sparkle.framework/
 sparkle.app/
 Sparkle Test App.app/
+
+# Xcode user-specific files
+xcuserdata/
+*.xcworkspace/xcuserdata/
