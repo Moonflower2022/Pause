@@ -355,9 +355,9 @@ class Settings: ObservableObject {
         self.detectionEnabled = UserDefaults.standard.object(forKey: "detectionEnabled") as? Bool ?? true
         self.andEnabled = UserDefaults.standard.object(forKey: "andEnabled") as? Bool ?? true
         self.detectionLatency1 = UserDefaults.standard.object(forKey: "detectionLatency1") as? Double ?? 0.5
-        self.detectionCountThreshold1 = UserDefaults.standard.object(forKey: "detectionCountThreshold1") as? Int ?? 60
+        self.detectionCountThreshold1 = UserDefaults.standard.object(forKey: "detectionCountThreshold1") as? Int ?? 1000
         self.detectionLatency2 = UserDefaults.standard.object(forKey: "detectionLatency2") as? Double ?? 2
-        self.detectionCountThreshold2 = UserDefaults.standard.object(forKey: "detectionCountThreshold2") as? Int ?? 60
+        self.detectionCountThreshold2 = UserDefaults.standard.object(forKey: "detectionCountThreshold2") as? Int ?? 6000
         self.pauseDuration = UserDefaults.standard.object(forKey: "pauseDuration") as? Int ?? 60
         self.pauseVariance = UserDefaults.standard.object(forKey: "pauseVariance") as? Int ?? 0
         self.soundEnabled = UserDefaults.standard.object(forKey: "soundEnabled") as? Bool ?? true
@@ -664,5 +664,73 @@ class Settings: ObservableObject {
         }
 
         return false
+    }
+
+    // MARK: - Reset Settings
+
+    func resetAllSettings() {
+        // Detection settings
+        detectionEnabled = true
+        andEnabled = true
+        detectionLatency1 = 0.5
+        detectionCountThreshold1 = 60
+        detectionLatency2 = 2
+        detectionCountThreshold2 = 60
+
+        // Session settings
+        pauseDuration = 60
+        pauseVariance = 0
+        sessionDisplayText = "Just Breathe"
+
+        // Sound settings
+        soundEnabled = true
+        soundVolume = 0.5
+        soundRepeatRate = 0
+        startSoundEnabled = true
+        startSoundVolume = 0.5
+        endSoundEnabled = true
+        endSoundVolume = 0.5
+
+        // Menu bar settings
+        showInMenuBar = true
+        menuBarShowTimer = true
+
+        // Activation settings
+        repeatedEnabled = false
+        repeatedInterval = 60
+        randomEnabled = false
+        randomMinInterval = 30
+        randomMaxInterval = 120
+        scheduledEnabled = false
+        scheduledTimes = []
+        recalculateOnActivation = true
+
+        // No-go settings
+        noGoEnabled = false
+        noGoTimes = []
+
+        // Hotkey settings
+        let defaultModifiers = UInt32(cmdKey | shiftKey)
+        let defaultKeyCode: UInt32 = 35 // Key code for 'P'
+        activateHotkeyModifiers = defaultModifiers
+        activateHotkeyKeyCode = defaultKeyCode
+
+        exitHotkeyModifiers = 0
+        exitHotkeyKeyCode = 14
+
+        snoozeHotkeyModifiers = 0
+        snoozeHotkeyKeyCode = 49
+        snoozeDuration = 5
+
+        // Stats (don't reset these)
+        // completedSessions
+        // completedSessionTime
+
+        // Clear undo/redo stacks
+        undoStack.removeAll()
+        redoStack.removeAll()
+
+        // UI state (don't reset)
+        // selectedTab
     }
 }
