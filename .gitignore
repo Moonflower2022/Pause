@@ -20,3 +20,13 @@ pnpm-debug.log*
 *.njsproj
 *.sln
 *.sw?
+
+# Sparkle signing keys (NEVER commit these!)
+sparkle_private_key.txt
+*_private_key.txt
+
+# Sparkle downloads
+Sparkle*.tar.xz
+Sparkle.framework/
+sparkle.app/
+Sparkle Test App.app/

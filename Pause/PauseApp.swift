@@ -25,6 +25,9 @@ struct PauseApp: App {
 
         // Initialize the input detection manager
         _ = InputDetectionManager.shared
+
+        // Initialize Sparkle updater
+        _ = SparkleUpdater.shared
     }
 
     var body: some Scene {
@@ -36,6 +39,13 @@ struct PauseApp: App {
                 Button("About Pause") {
                     NSApplication.shared.orderFrontStandardAboutPanel()
                 }
+            }
+
+            CommandGroup(after: .appInfo) {
+                Button("Check for Updates...") {
+                    SparkleUpdater.shared.checkForUpdates()
+                }
+                Divider()
             }
         }
         .windowResizability(.contentSize)
