@@ -15,7 +15,7 @@ macOS app source lives in `Pause/` with entry points such as `PauseApp.swift`, `
 Follow Swift 5 style with four-space indentation. Use `PascalCase` for types, `camelCase` for properties/functions, and prefer `struct`-based SwiftUI views plus `final class` managers (`AppState`, `GlobalHotkeyManager`). Keep string constants in `Settings` and persist via `UserDefaults`. Audio filenames in `Resources/` are lowercase without separators—mirror that when adding assets. The web site uses TypeScript + Vue; rely on `npm run format` (Prettier) and keep page-level components in `website/src/views`.
 
 ## Testing Guidelines
-dont use testing
+normal xcode testing
 
 ## Commit & Pull Request Guidelines
 Project history favors terse, lower-case subject lines (e.g., `prevent scheduled activation resets`). Use the imperative mood, keep the summary under ~72 characters, and add context in the body when the change is non-trivial. Each PR should include: a concise change summary, validation notes (`xcodebuild test`, website lint/build output), linked issues, and macOS UI screenshots or screen recordings when visuals change. Request review only after local checks pass or you have posted blockers.
