@@ -145,20 +145,20 @@ class InputDetectionManager: ObservableObject {
                 self.eventTimestamps.removeFirst()
             }
 
-            // Update counts directly (we're already on eventQueue)
-            self.updateCountsInternal()
-            self.checkThresholds()
+            // Update counts and check thresholds (all on eventQueue, then update UI on main)
+            self.updateCountsAndCheckThresholds()
         }
     }
 
     private func updateCounts() {
+        // Called from timer (which publishes on main thread)
         guard settings.detectionEnabled else {
             currentCount1 = 0
             currentCount2 = 0
             return
         }
 
-        // Called from timer - dispatch to eventQueue
+        // Dispatch to eventQueue for computation
         eventQueue.async { [weak self] in
             self?.updateCountsInternal()
         }
@@ -202,11 +202,41 @@ class InputDetectionManager: ObservableObject {
         }
     }
 
-    private func checkThresholds() {
-        guard settings.detectionEnabled else { return }
+    private func updateCountsAndCheckThresholds() {
+        // Must be called on eventQueue
+        let now = Date()
+        let latency1 = settings.detectionLatency1
+        let latency2 = settings.detectionLatency2
 
-        let threshold1Met = currentCount1 >= settings.detectionCountThreshold1
-        let threshold2Met = currentCount2 >= settings.detectionCountThreshold2
+        var count1 = 0
+        var count2 = 0
+
+        for i in 0..<eventTimestamps.count {
+            let timestamp = eventTimestamps[i]
+            let age = now.timeIntervalSince(timestamp)
+
+            // Count consecutive events within latency threshold
+            if i > 0 {
+                let timeSincePrevious = timestamp.timeIntervalSince(eventTimestamps[i-1])
+
+                if timeSincePrevious < latency1 {
+                    count1 += 1
+                }
+
+                if timeSincePrevious < latency2 {
+                    count2 += 1
+                }
+            }
+
+            // Don't count events that are too old
+            if age > max(latency1, latency2) * 2 {
+                continue
+            }
+        }
+
+        // Check thresholds with local counts
+        let threshold1Met = count1 >= settings.detectionCountThreshold1
+        let threshold2Met = count2 >= settings.detectionCountThreshold2
 
         var shouldActivate = false
 
@@ -220,25 +250,32 @@ class InputDetectionManager: ObservableObject {
 
         if shouldActivate {
             print("🚨 InputDetectionManager: THRESHOLD MET!")
-            print("   Count1: \(currentCount1)/\(settings.detectionCountThreshold1) (met: \(threshold1Met))")
-            print("   Count2: \(currentCount2)/\(settings.detectionCountThreshold2) (met: \(threshold2Met))")
+            print("   Count1: \(count1)/\(settings.detectionCountThreshold1) (met: \(threshold1Met))")
+            print("   Count2: \(count2)/\(settings.detectionCountThreshold2) (met: \(threshold2Met))")
             print("   Mode: \(settings.andEnabled ? "AND" : "OR")")
             triggerActivation()
+        }
+
+        // Update @Published properties on main thread
+        DispatchQueue.main.async {
+            self.currentCount1 = count1
+            self.currentCount2 = count2
         }
     }
 
     private func triggerActivation() {
         print("🎯 InputDetectionManager: TRIGGERING PAUSE MODE!")
 
-        // Clear timestamps to prevent immediate re-trigger
+        // Clear timestamps to prevent immediate re-trigger (on eventQueue)
         eventTimestamps.removeAll()
-        currentCount1 = 0
-        currentCount2 = 0
 
         print("🎯 InputDetectionManager: Counts reset. Calling AppState.triggerPauseMode()...")
 
-        // Trigger pause session via AppState
+        // Update @Published properties and trigger pause on main thread
         DispatchQueue.main.async {
+            self.currentCount1 = 0
+            self.currentCount2 = 0
+
             print("🎯 InputDetectionManager: Executing AppState.triggerPauseMode() on main thread")
             AppState.shared.triggerPauseMode()
             print("🎯 InputDetectionManager: AppState.triggerPauseMode() called")
