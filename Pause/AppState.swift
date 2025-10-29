@@ -119,6 +119,11 @@ class AppState: NSObject, ObservableObject, AVAudioPlayerDelegate {
             playRandomAmbientSound()
         }
 
+        // Enable input locking if enabled
+        if Settings.shared.lockSessionEnabled {
+            InputLockManager.shared.startBlocking()
+        }
+
         // Start the countdown timer
         timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
             guard let self = self else { return }
@@ -198,6 +203,9 @@ class AppState: NSObject, ObservableObject, AVAudioPlayerDelegate {
 
         startSoundPlayer?.stop()
         startSoundPlayer = nil
+
+        // Disable input locking
+        InputLockManager.shared.stopBlocking()
 
         // Remove event monitor
         if let monitor = eventMonitor {

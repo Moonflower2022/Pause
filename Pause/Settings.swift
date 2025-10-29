@@ -169,6 +169,12 @@ class Settings: ObservableObject {
         }
     }
 
+    @Published var lockSessionEnabled: Bool {
+        didSet {
+            UserDefaults.standard.set(lockSessionEnabled, forKey: "lockSessionEnabled")
+        }
+    }
+
     @Published var completedSessions: Int {
         didSet {
             UserDefaults.standard.set(completedSessions, forKey: "completedSessions")
@@ -370,6 +376,7 @@ class Settings: ObservableObject {
         self.showInMenuBar = UserDefaults.standard.object(forKey: "showInMenuBar") as? Bool ?? true
         self.menuBarShowTimer = UserDefaults.standard.object(forKey: "menuBarShowTimer") as? Bool ?? true
         self.sessionDisplayText = UserDefaults.standard.object(forKey: "sessionDisplayText") as? String ?? "Just Breathe"
+        self.lockSessionEnabled = UserDefaults.standard.object(forKey: "lockSessionEnabled") as? Bool ?? false
         self.completedSessions = UserDefaults.standard.object(forKey: "completedSessions") as? Int ?? 0
         self.completedSessionTime = UserDefaults.standard.object(forKey: "completedSessionTime") as? Int ?? 0
 
@@ -681,6 +688,7 @@ class Settings: ObservableObject {
         pauseDuration = 60
         pauseVariance = 0
         sessionDisplayText = "Just Breathe"
+        lockSessionEnabled = false
 
         // Sound settings
         soundEnabled = true

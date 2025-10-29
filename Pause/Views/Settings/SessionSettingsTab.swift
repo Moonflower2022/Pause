@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import AppKit
 
 struct SessionSettingsTab: View {
     @ObservedObject var settings = Settings.shared
@@ -67,6 +68,70 @@ struct SessionSettingsTab: View {
             } footer: {
                 Text("Text displayed during meditation sessions. Scheduled activations and snoozes will show their custom labels instead.")
                     .font(.caption)
+            }
+
+            Section {
+                Toggle("Lock Input During Session", isOn: $settings.lockSessionEnabled)
+
+                if settings.lockSessionEnabled {
+                    HStack {
+                        Text("Accessibility Permission")
+                            .frame(width: 180, alignment: .leading)
+                        Spacer()
+                        if InputLockManager.shared.hasAccessibilityPermission {
+                            Text("✅ Granted")
+                                .foregroundColor(.green)
+                        } else {
+                            Text("❌ Not Granted")
+                                .foregroundColor(.red)
+                        }
+                    }
+
+                    if !InputLockManager.shared.hasAccessibilityPermission {
+                        Button("Open System Settings") {
+                            if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
+                                NSWorkspace.shared.open(url)
+                            }
+                        }
+                    }
+
+                    HStack {
+                        Text("Input Monitoring Permission")
+                            .frame(width: 180, alignment: .leading)
+                        Spacer()
+                        if InputLockManager.shared.hasInputMonitoringPermission {
+                            Text("✅ Granted")
+                                .foregroundColor(.green)
+                        } else {
+                            Text("❌ Not Granted")
+                                .foregroundColor(.red)
+                        }
+                    }
+
+                    if !InputLockManager.shared.hasInputMonitoringPermission {
+                        Button("Open System Settings") {
+                            if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent") {
+                                NSWorkspace.shared.open(url)
+                            }
+                        }
+                    }
+                }
+            } header: {
+                Text("Input Blocking")
+            } footer: {
+                if settings.lockSessionEnabled {
+                    if InputLockManager.shared.hasAllPermissions() {
+                        Text("Input blocking is ready. All keyboard, mouse, and trackpad input will be blocked during meditation sessions.")
+                            .font(.caption)
+                    } else {
+                        Text("Both permissions are required. Click the buttons above to open System Settings, grant the permissions, then restart the app.")
+                            .font(.caption)
+                            .foregroundColor(.red)
+                    }
+                } else {
+                    Text("When enabled, blocks all keyboard and mouse/trackpad input during meditation sessions.")
+                        .font(.caption)
+                }
             }
         }
         .formStyle(.grouped)
