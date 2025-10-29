@@ -95,6 +95,12 @@ class Settings: ObservableObject {
         }
     }
 
+    @Published var idleResetTimeout: Int {
+        didSet {
+            UserDefaults.standard.set(idleResetTimeout, forKey: "idleResetTimeout")
+        }
+    }
+
     @Published var pauseDuration: Int {
         didSet {
             UserDefaults.standard.set(pauseDuration, forKey: "pauseDuration")
@@ -364,6 +370,7 @@ class Settings: ObservableObject {
         self.detectionCountThreshold1 = UserDefaults.standard.object(forKey: "detectionCountThreshold1") as? Int ?? 1000
         self.detectionLatency2 = UserDefaults.standard.object(forKey: "detectionLatency2") as? Double ?? 2
         self.detectionCountThreshold2 = UserDefaults.standard.object(forKey: "detectionCountThreshold2") as? Int ?? 6000
+        self.idleResetTimeout = UserDefaults.standard.object(forKey: "idleResetTimeout") as? Int ?? 10
         self.pauseDuration = UserDefaults.standard.object(forKey: "pauseDuration") as? Int ?? 60
         self.pauseVariance = UserDefaults.standard.object(forKey: "pauseVariance") as? Int ?? 0
         self.soundEnabled = UserDefaults.standard.object(forKey: "soundEnabled") as? Bool ?? true
@@ -683,6 +690,7 @@ class Settings: ObservableObject {
         detectionCountThreshold1 = 1000
         detectionLatency2 = 2
         detectionCountThreshold2 = 6000
+        idleResetTimeout = 10
 
         // Session settings
         pauseDuration = 60

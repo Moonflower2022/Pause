@@ -138,6 +138,25 @@ class InputDetectionManager: ObservableObject {
 
             // Record timestamp
             let now = Date()
+
+            // Check for idle timeout - if the gap between this event and the last event
+            // is greater than the idle timeout, reset the counters
+            if let lastTimestamp = self.eventTimestamps.last {
+                let timeSinceLastEvent = now.timeIntervalSince(lastTimestamp)
+                let idleTimeoutSeconds = TimeInterval(self.settings.idleResetTimeout * 60)
+
+                if timeSinceLastEvent > idleTimeoutSeconds {
+                    print("⏸️ InputDetectionManager: Idle timeout (\(self.settings.idleResetTimeout) min) exceeded. Resetting counters.")
+                    self.eventTimestamps.removeAll()
+
+                    // Reset counts on main thread
+                    DispatchQueue.main.async {
+                        self.currentCount1 = 0
+                        self.currentCount2 = 0
+                    }
+                }
+            }
+
             self.eventTimestamps.append(now)
 
             // Keep only recent timestamps

@@ -124,6 +124,7 @@ struct DetectionSettingsTab: View {
                 }
             }
 
+
             // Second threshold
             if settings.detectionEnabled {
                 Section {
@@ -161,6 +162,28 @@ struct DetectionSettingsTab: View {
                     Text("Threshold 2")
                 } footer: {
                     Text("Triggers when \(settings.detectionCountThreshold2) inputs occur with less than \(String(format: "%.1f", settings.detectionLatency2))s between them. Current: \(detector.currentCount2)")
+                        .font(.caption)
+                }
+            }
+            
+            // Idle timeout
+            if settings.detectionEnabled {
+                Section {
+                    HStack {
+                        Text("Idle Reset Timeout")
+                            .frame(width: 140, alignment: .leading)
+                        Slider(value: Binding(
+                            get: { Double(settings.idleResetTimeout) },
+                            set: { settings.idleResetTimeout = Int($0) }
+                        ), in: 1...30, step: 1)
+                        Text("\(settings.idleResetTimeout) min")
+                            .frame(width: 60, alignment: .trailing)
+                            .monospacedDigit()
+                    }
+                } header: {
+                    Text("Idle Detection")
+                } footer: {
+                    Text("If no input is detected for \(settings.idleResetTimeout) minutes, detection counters will reset. This prevents counting resumed work after breaks.")
                         .font(.caption)
                 }
             }
