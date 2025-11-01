@@ -101,6 +101,9 @@ class AppState: NSObject, ObservableObject, AVAudioPlayerDelegate {
     func startPauseMode(displayText: String? = nil) {
         isPauseMode = true
 
+        // Pause activation timers during the session
+        ActivationScheduler.shared.pauseTimers()
+
         // Set the display text (use provided text, or default from settings)
         currentDisplayText = displayText ?? Settings.shared.sessionDisplayText
 
@@ -183,10 +186,14 @@ class AppState: NSObject, ObservableObject, AVAudioPlayerDelegate {
             print("Session ended early (not counted)")
         }
 
-        // Recalculate timers after session ends (whether completed or cancelled) if the setting is enabled
+        // Resume or recalculate timers after session ends
         if Settings.shared.recalculateOnActivation {
+            // Recalculate timers from scratch (creates new timers)
             print("Recalculating timers after session ended")
             ActivationScheduler.shared.recalculateTimers()
+        } else {
+            // Resume paused timers with their remaining time
+            ActivationScheduler.shared.resumeTimers()
         }
 
         // Stop the timer

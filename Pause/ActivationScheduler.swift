@@ -19,6 +19,12 @@ class ActivationScheduler: ObservableObject {
     private var scheduledTimers: [Timer] = []
     private var cleanupTimer: Timer?
 
+    // Paused state tracking
+    private var isPaused = false
+    private var pausedRepeatedActivation: Date?
+    private var pausedRandomActivation: Date?
+    private var pausedScheduledActivation: Date?
+
     private init() {
         // Initial setup
         updateSchedule()
@@ -69,6 +75,13 @@ class ActivationScheduler: ObservableObject {
     // Public method to recalculate timers when an activation occurs
     func recalculateTimers() {
         print("Recalculating all timers due to activation")
+
+        // Reset paused state when recalculating
+        isPaused = false
+        pausedRepeatedActivation = nil
+        pausedRandomActivation = nil
+        pausedScheduledActivation = nil
+
         updateSchedule()
     }
 
@@ -134,8 +147,10 @@ class ActivationScheduler: ObservableObject {
         repeatedTimer = Timer.scheduledTimer(withTimeInterval: intervalSeconds, repeats: true) { [weak self] _ in
             print("Repeated timer fired")
 
-            // Check if we're in a no-go time
-            if Settings.shared.isInNoGoTime() {
+            // Skip if a session is already active
+            if AppState.shared.isPauseMode {
+                print("Skipping activation - session already active")
+            } else if Settings.shared.isInNoGoTime() {
                 print("Skipping activation - in no-go time")
             } else {
                 print("Triggering pause mode")
@@ -163,7 +178,10 @@ class ActivationScheduler: ObservableObject {
         repeatedTimer = Timer.scheduledTimer(withTimeInterval: delaySeconds, repeats: true) { [weak self] _ in
             print("Repeated timer fired")
 
-            if Settings.shared.isInNoGoTime() {
+            // Skip if a session is already active
+            if AppState.shared.isPauseMode {
+                print("Skipping activation - session already active")
+            } else if Settings.shared.isInNoGoTime() {
                 print("Skipping activation - in no-go time")
             } else {
                 print("Triggering pause mode")
@@ -206,8 +224,10 @@ class ActivationScheduler: ObservableObject {
         randomTimer = Timer.scheduledTimer(withTimeInterval: intervalSeconds, repeats: false) { [weak self] _ in
             print("Random timer fired")
 
-            // Check if we're in a no-go time
-            if Settings.shared.isInNoGoTime() {
+            // Skip if a session is already active
+            if AppState.shared.isPauseMode {
+                print("Skipping activation - session already active")
+            } else if Settings.shared.isInNoGoTime() {
                 print("Skipping activation - in no-go time")
             } else {
                 print("Triggering pause mode")
@@ -229,7 +249,10 @@ class ActivationScheduler: ObservableObject {
         randomTimer = Timer.scheduledTimer(withTimeInterval: delaySeconds, repeats: false) { [weak self] _ in
             print("Random timer fired (after delay)")
 
-            if Settings.shared.isInNoGoTime() {
+            // Skip if a session is already active
+            if AppState.shared.isPauseMode {
+                print("Skipping activation - session already active")
+            } else if Settings.shared.isInNoGoTime() {
                 print("Skipping activation - in no-go time")
             } else {
                 print("Triggering pause mode")
@@ -332,8 +355,10 @@ class ActivationScheduler: ObservableObject {
         let timer = Timer.scheduledTimer(withTimeInterval: timeInterval, repeats: false) { [weak self] _ in
             print("Scheduled timer fired")
 
-            // Check if we're in a no-go time
-            if Settings.shared.isInNoGoTime() {
+            // Skip if a session is already active
+            if AppState.shared.isPauseMode {
+                print("Skipping activation - session already active")
+            } else if Settings.shared.isInNoGoTime() {
                 print("Skipping activation - in no-go time")
             } else {
                 print("Triggering pause mode with text: \(scheduledTime.name)")
@@ -474,6 +499,85 @@ class ActivationScheduler: ObservableObject {
         }
 
         return soonest
+    }
+
+    // MARK: - Pause/Resume Timer Management
+
+    /// Pause all activation timers during a session
+    func pauseTimers() {
+        guard !isPaused else { return }
+
+        print("⏸️ Pausing all activation timers during session")
+
+        isPaused = true
+
+        // Save current activation dates
+        pausedRepeatedActivation = nextRepeatedActivation
+        pausedRandomActivation = nextRandomActivation
+        pausedScheduledActivation = nextScheduledActivation
+
+        // Invalidate all timers (but don't clear the next activation dates yet)
+        repeatedTimer?.invalidate()
+        repeatedTimer = nil
+
+        randomTimer?.invalidate()
+        randomTimer = nil
+
+        scheduledTimers.forEach { $0.invalidate() }
+        scheduledTimers.removeAll()
+
+        print("⏸️ Timers paused - will resume after session")
+    }
+
+    /// Resume all activation timers after a session
+    func resumeTimers() {
+        guard isPaused else { return }
+
+        print("▶️ Resuming activation timers after session")
+
+        isPaused = false
+        let now = Date()
+
+        // Resume repeated timer if it was active
+        if let pausedDate = pausedRepeatedActivation, Settings.shared.repeatedEnabled {
+            let remainingTime = pausedDate.timeIntervalSince(now)
+
+            if remainingTime > 0 {
+                print("▶️ Resuming repeated timer with \(Int(remainingTime))s remaining")
+                setupRepeatedTimerWithDelay(remainingTime)
+            } else {
+                // Timer should have fired during session - reschedule normally
+                print("▶️ Repeated timer expired during session - rescheduling")
+                setupRepeatedTimer()
+            }
+        }
+
+        // Resume random timer if it was active
+        if let pausedDate = pausedRandomActivation, Settings.shared.randomEnabled {
+            let remainingTime = pausedDate.timeIntervalSince(now)
+
+            if remainingTime > 0 {
+                print("▶️ Resuming random timer with \(Int(remainingTime))s remaining")
+                setupRandomTimerWithDelay(remainingTime)
+            } else {
+                // Timer should have fired during session - reschedule normally
+                print("▶️ Random timer expired during session - rescheduling")
+                setupRandomTimer()
+            }
+        }
+
+        // Resume scheduled timers if they were active
+        if pausedScheduledActivation != nil, Settings.shared.scheduledEnabled {
+            print("▶️ Resuming scheduled timers")
+            setupScheduledTimers()
+        }
+
+        // Clear paused state
+        pausedRepeatedActivation = nil
+        pausedRandomActivation = nil
+        pausedScheduledActivation = nil
+
+        print("▶️ All timers resumed")
     }
 
     deinit {
