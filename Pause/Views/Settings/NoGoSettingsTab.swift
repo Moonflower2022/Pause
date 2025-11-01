@@ -2,27 +2,91 @@
 //  NoGoSettingsTab.swift
 //  Pause
 //
-//  No-Go time settings for blocking activations during specific time periods
+//  Settings for preventing interruptions
 //
 
 import SwiftUI
 
 struct NoGoSettingsTab: View {
     @ObservedObject var settings = Settings.shared
+    @ObservedObject var detector = InputDetectionManager.shared
 
     var body: some View {
         Form {
-            // Main toggle
+            // SECTION 1: Don't Interrupt (Input Detection)
             Section {
-                Toggle("No-Go Times", isOn: $settings.noGoEnabled)
+                Toggle("Don't Interrupt While Working", isOn: $settings.detectionEnabled)
                     .toggleStyle(.switch)
+
+                if settings.detectionEnabled {
+                    HStack {
+                        Text("Minimum Buffer")
+                            .frame(width: 140, alignment: .leading)
+                        Slider(value: Binding(
+                            get: { Double(settings.inputDelayBuffer) },
+                            set: { settings.inputDelayBuffer = Int($0) }
+                        ), in: 10...300, step: 5)
+                        Text("\(settings.inputDelayBuffer)s")
+                            .frame(width: 60, alignment: .trailing)
+                            .monospacedDigit()
+                    }
+                }
+
+                // System status
+                if settings.detectionEnabled {
+                    HStack {
+                        Text("Input Monitoring Permission")
+                            .frame(width: 180, alignment: .leading)
+                        if detector.hasInputMonitoringPermission {
+                            Text("✅ Granted")
+                                .foregroundColor(.green)
+                        } else {
+                            Text("❌ Not Granted")
+                                .foregroundColor(.red)
+                        }
+
+                        Spacer()
+
+                        if !detector.hasInputMonitoringPermission {
+                            Button("Open System Settings") {
+                                if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent") {
+                                    NSWorkspace.shared.open(url)
+                                }
+                            }
+                        }
+                    }
+
+                }
+            } header: {
+                Text("Don't Interrupt")
+            } footer: {
+                if settings.detectionEnabled {
+                    Text("When you type or click, scheduled activations closer than \(settings.inputDelayBuffer) seconds will be delayed. This prevents interruptions while actively working.")
+                        .font(.caption)
+                } else {
+                    Text("When enabled, keyboard or mouse input will delay upcoming activations to prevent interruptions while you're working.")
+                        .font(.caption)
+                }
+            }
+
+            // SECTION 2: No-Go Times
+            Section {
+                Toggle("No-Go Times", isOn: Binding(
+                    get: { settings.noGoEnabled },
+                    set: { newValue in
+                        if !newValue {
+                            // Clear all no-go times when disabling
+                            settings.noGoTimes.removeAll()
+                        }
+                        settings.noGoEnabled = newValue
+                    }
+                ))
+                .toggleStyle(.switch)
             } header: {
                 Text("No-Go Times")
             } footer: {
-                if settings.noGoEnabled {
-                    Text("Prevent activations during specified time periods")
-                        .font(.caption)
-                }
+                Text("Prevent activations during specified time periods. Turning this off will remove all configured times.")
+                    .font(.caption)
             }
 
             // Recurring no-go times (daily)

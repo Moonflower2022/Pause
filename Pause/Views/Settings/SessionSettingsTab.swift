@@ -78,7 +78,6 @@ struct SessionSettingsTab: View {
                     HStack {
                         Text("Accessibility Permission")
                             .frame(width: 180, alignment: .leading)
-                        Spacer()
                         if lockManager.hasAccessibilityPermission {
                             Text("✅ Granted")
                                 .foregroundColor(.green)
@@ -86,12 +85,14 @@ struct SessionSettingsTab: View {
                             Text("❌ Not Granted")
                                 .foregroundColor(.red)
                         }
-                    }
 
-                    if !lockManager.hasAccessibilityPermission {
-                        Button("Open System Settings") {
-                            if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
-                                NSWorkspace.shared.open(url)
+                        Spacer()
+
+                        if !lockManager.hasAccessibilityPermission {
+                            Button("Open System Settings") {
+                                if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
+                                    NSWorkspace.shared.open(url)
+                                }
                             }
                         }
                     }
@@ -99,7 +100,6 @@ struct SessionSettingsTab: View {
                     HStack {
                         Text("Input Monitoring Permission")
                             .frame(width: 180, alignment: .leading)
-                        Spacer()
                         if lockManager.hasInputMonitoringPermission {
                             Text("✅ Granted")
                                 .foregroundColor(.green)
@@ -107,15 +107,18 @@ struct SessionSettingsTab: View {
                             Text("❌ Not Granted")
                                 .foregroundColor(.red)
                         }
-                    }
 
-                    if !lockManager.hasInputMonitoringPermission {
-                        Button("Open System Settings") {
-                            if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent") {
-                                NSWorkspace.shared.open(url)
+                        Spacer()
+
+                        if !lockManager.hasInputMonitoringPermission {
+                            Button("Open System Settings") {
+                                if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent") {
+                                    NSWorkspace.shared.open(url)
+                                }
                             }
                         }
                     }
+
                 }
             } header: {
                 Text("Input Blocking")
