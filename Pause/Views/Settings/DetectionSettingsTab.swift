@@ -2,7 +2,7 @@
 //  DetectionSettingsTab.swift
 //  Pause
 //
-//  Settings for overworking detection based on input latency thresholds
+//  Settings for input detection and activation delay
 //
 
 import SwiftUI
@@ -37,6 +37,17 @@ struct DetectionSettingsTab: View {
                         .foregroundColor(detector.totalEventsReceived > 0 ? .green : .secondary)
                 }
 
+                if let lastInput = detector.lastInputTime {
+                    HStack {
+                        Text("Last Input")
+                            .frame(width: 180, alignment: .leading)
+                        Spacer()
+                        Text(lastInput, style: .relative)
+                            .monospacedDigit()
+                            .foregroundColor(.secondary)
+                    }
+                }
+
                 if !detector.hasInputMonitoringPermission {
                     Button("Open System Settings") {
                         if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent") {
@@ -48,142 +59,41 @@ struct DetectionSettingsTab: View {
                 Text("System Status")
             } footer: {
                 if detector.hasInputMonitoringPermission {
-                    Text("Input detection is active and monitoring keyboard/mouse events. Events received: \(detector.totalEventsReceived). Check Console.app for detailed logs (search for 'InputDetectionManager').")
+                    Text("Input detection is active and monitoring keyboard/mouse events.")
                         .font(.caption)
                 } else {
-                    Text("Input Monitoring permission is required to monitor input events. Grant permission in System Settings → Privacy & Security → Input Monitoring, then restart the app.")
+                    Text("Input Monitoring permission is required. Grant permission in System Settings → Privacy & Security → Input Monitoring, then restart the app.")
                         .font(.caption)
                         .foregroundColor(.red)
                 }
             }
 
-            // Main detection toggle and logic
+            // Main detection toggle
             Section {
-                Toggle("Enable Detection", isOn: $settings.detectionEnabled)
+                Toggle("Prevent Activations During Typing", isOn: $settings.detectionEnabled)
                     .toggleStyle(.switch)
 
                 if settings.detectionEnabled {
-                    Toggle("Require Both Thresholds", isOn: $settings.andEnabled)
-                        .toggleStyle(.switch)
+                    HStack {
+                        Text("Minimum Buffer")
+                            .frame(width: 140, alignment: .leading)
+                        Slider(value: Binding(
+                            get: { Double(settings.inputDelayBuffer) },
+                            set: { settings.inputDelayBuffer = Int($0) }
+                        ), in: 10...300, step: 5)
+                        Text("\(settings.inputDelayBuffer)s")
+                            .frame(width: 60, alignment: .trailing)
+                            .monospacedDigit()
+                    }
                 }
             } header: {
-                Text("Overworking Detection")
+                Text("Input Detection")
             } footer: {
                 if settings.detectionEnabled {
-                    if settings.andEnabled {
-                        Text("Pause will activate when both thresholds are surpassed")
-                            .font(.caption)
-                    } else {
-                        Text("Pause will activate when either threshold is surpassed")
-                            .font(.caption)
-                    }
+                    Text("When you type or click, scheduled activations closer than \(settings.inputDelayBuffer) seconds will be delayed to \(settings.inputDelayBuffer) seconds. This prevents interruptions while actively working.")
+                        .font(.caption)
                 } else {
-                    Text("Detection is disabled. Configure thresholds below to detect overworking patterns.")
-                        .font(.caption)
-                }
-            }
-
-            // First threshold
-            if settings.detectionEnabled {
-                Section {
-                    HStack {
-                        Text("Input Latency")
-                            .frame(width: 140, alignment: .leading)
-                        Slider(value: $settings.detectionLatency1, in: 0.1...5.0, step: 0.1)
-                        Text("\(String(format: "%.1f", settings.detectionLatency1))s")
-                            .frame(width: 50, alignment: .trailing)
-                            .monospacedDigit()
-                    }
-
-                    HStack {
-                        Text("Count Threshold")
-                            .frame(width: 140, alignment: .leading)
-                        Slider(value: Binding(
-                            get: { Double(settings.detectionCountThreshold1) },
-                            set: { settings.detectionCountThreshold1 = Int($0) }
-                        ), in: 10...10000, step: 50)
-                        Text("\(settings.detectionCountThreshold1)")
-                            .frame(width: 60, alignment: .trailing)
-                            .monospacedDigit()
-                    }
-
-                    HStack {
-                        Text("Current Count")
-                            .frame(width: 140, alignment: .leading)
-                        Spacer()
-                        Text("\(detector.currentCount1)")
-                            .frame(width: 50, alignment: .trailing)
-                            .monospacedDigit()
-                            .foregroundColor(detector.currentCount1 >= settings.detectionCountThreshold1 ? .red : .primary)
-                    }
-                } header: {
-                    Text("Threshold 1")
-                } footer: {
-                    Text("Triggers when \(settings.detectionCountThreshold1) inputs occur with less than \(String(format: "%.1f", settings.detectionLatency1))s between them. Current: \(detector.currentCount1)")
-                        .font(.caption)
-                }
-            }
-
-
-            // Second threshold
-            if settings.detectionEnabled {
-                Section {
-                    HStack {
-                        Text("Input Latency")
-                            .frame(width: 140, alignment: .leading)
-                        Slider(value: $settings.detectionLatency2, in: 0.1...5.0, step: 0.1)
-                        Text("\(String(format: "%.1f", settings.detectionLatency2))s")
-                            .frame(width: 50, alignment: .trailing)
-                            .monospacedDigit()
-                    }
-
-                    HStack {
-                        Text("Count Threshold")
-                            .frame(width: 140, alignment: .leading)
-                        Slider(value: Binding(
-                            get: { Double(settings.detectionCountThreshold2) },
-                            set: { settings.detectionCountThreshold2 = Int($0) }
-                        ), in: 10...10000, step: 50)
-                        Text("\(settings.detectionCountThreshold2)")
-                            .frame(width: 60, alignment: .trailing)
-                            .monospacedDigit()
-                    }
-
-                    HStack {
-                        Text("Current Count")
-                            .frame(width: 140, alignment: .leading)
-                        Spacer()
-                        Text("\(detector.currentCount2)")
-                            .frame(width: 50, alignment: .trailing)
-                            .monospacedDigit()
-                            .foregroundColor(detector.currentCount2 >= settings.detectionCountThreshold2 ? .red : .primary)
-                    }
-                } header: {
-                    Text("Threshold 2")
-                } footer: {
-                    Text("Triggers when \(settings.detectionCountThreshold2) inputs occur with less than \(String(format: "%.1f", settings.detectionLatency2))s between them. Current: \(detector.currentCount2)")
-                        .font(.caption)
-                }
-            }
-            
-            // Idle timeout
-            if settings.detectionEnabled {
-                Section {
-                    HStack {
-                        Text("Idle Reset Timeout")
-                            .frame(width: 140, alignment: .leading)
-                        Slider(value: Binding(
-                            get: { Double(settings.idleResetTimeout) },
-                            set: { settings.idleResetTimeout = Int($0) }
-                        ), in: 1...30, step: 1)
-                        Text("\(settings.idleResetTimeout) min")
-                            .frame(width: 60, alignment: .trailing)
-                            .monospacedDigit()
-                    }
-                } header: {
-                    Text("Idle Detection")
-                } footer: {
-                    Text("If no input is detected for \(settings.idleResetTimeout) minutes, detection counters will reset. This prevents counting resumed work after breaks.")
+                    Text("When enabled, any keyboard or mouse input will delay upcoming activations to prevent interruptions while you're typing.")
                         .font(.caption)
                 }
             }

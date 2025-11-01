@@ -12,15 +12,12 @@ import IOKit.hid
 class InputDetectionManager: ObservableObject {
     static let shared = InputDetectionManager()
 
-    @Published var currentCount1: Int = 0
-    @Published var currentCount2: Int = 0
     @Published var hasInputMonitoringPermission: Bool = false
     @Published var totalEventsReceived: Int = 0
+    @Published var lastInputTime: Date?
 
     private var eventTap: CFMachPort?
     private var runLoopSource: CFRunLoopSource?
-    private var eventTimestamps: [Date] = []
-    private let maxTimestampHistory = 300 // Keep last 300 events
     private let eventQueue = DispatchQueue(label: "com.pause.inputdetection", qos: .userInteractive)
 
     private let settings = Settings.shared
@@ -30,14 +27,6 @@ class InputDetectionManager: ObservableObject {
         print("🔍 InputDetectionManager: Initializing...")
         checkInputMonitoringPermission()
         setupEventTap()
-
-        // Update counts whenever timestamps change
-        Timer.publish(every: 0.5, on: .main, in: .common)
-            .autoconnect()
-            .sink { [weak self] _ in
-                self?.updateCounts()
-            }
-            .store(in: &cancellables)
 
         // Monitor permission changes
         Timer.publish(every: 1.0, on: .main, in: .common)
@@ -141,9 +130,10 @@ class InputDetectionManager: ObservableObject {
 
             let eventCount = self.totalEventsReceived + 1
 
-            // Update @Published property on main thread
+            // Update @Published properties on main thread
             DispatchQueue.main.async {
                 self.totalEventsReceived = eventCount
+                self.lastInputTime = Date()
             }
 
             // Log first few events to confirm it's working
@@ -160,170 +150,13 @@ class InputDetectionManager: ObservableObject {
                 return
             }
 
-            // Record timestamp
-            let now = Date()
-
-            // Check for idle timeout - if the gap between this event and the last event
-            // is greater than the idle timeout, reset the counters
-            if let lastTimestamp = self.eventTimestamps.last {
-                let timeSinceLastEvent = now.timeIntervalSince(lastTimestamp)
-                let idleTimeoutSeconds = TimeInterval(self.settings.idleResetTimeout * 60)
-
-                if timeSinceLastEvent > idleTimeoutSeconds {
-                    print("⏸️ InputDetectionManager: Idle timeout (\(self.settings.idleResetTimeout) min) exceeded. Resetting counters.")
-                    self.eventTimestamps.removeAll()
-
-                    // Reset counts on main thread
-                    DispatchQueue.main.async {
-                        self.currentCount1 = 0
-                        self.currentCount2 = 0
-                    }
-                }
+            // Enforce minimum buffer on scheduled activations
+            DispatchQueue.main.async {
+                ActivationScheduler.shared.enforceMinimumBuffer()
             }
-
-            self.eventTimestamps.append(now)
-
-            // Keep only recent timestamps
-            if self.eventTimestamps.count > self.maxTimestampHistory {
-                self.eventTimestamps.removeFirst()
-            }
-
-            // Update counts and check thresholds (all on eventQueue, then update UI on main)
-            self.updateCountsAndCheckThresholds()
         }
     }
 
-    private func updateCounts() {
-        // Called from timer (which publishes on main thread)
-        guard settings.detectionEnabled else {
-            currentCount1 = 0
-            currentCount2 = 0
-            return
-        }
-
-        // Dispatch to eventQueue for computation
-        eventQueue.async { [weak self] in
-            self?.updateCountsInternal()
-        }
-    }
-
-    private func updateCountsInternal() {
-        // Must be called on eventQueue
-        let now = Date()
-        let latency1 = settings.detectionLatency1
-        let latency2 = settings.detectionLatency2
-
-        var count1 = 0
-        var count2 = 0
-
-        for i in 0..<eventTimestamps.count {
-            let timestamp = eventTimestamps[i]
-            let age = now.timeIntervalSince(timestamp)
-
-            // Count consecutive events within latency threshold
-            if i > 0 {
-                let timeSincePrevious = timestamp.timeIntervalSince(eventTimestamps[i-1])
-
-                if timeSincePrevious < latency1 {
-                    count1 += 1
-                }
-
-                if timeSincePrevious < latency2 {
-                    count2 += 1
-                }
-            }
-
-            // Don't count events that are too old
-            if age > max(latency1, latency2) * 2 {
-                continue
-            }
-        }
-
-        DispatchQueue.main.async {
-            self.currentCount1 = count1
-            self.currentCount2 = count2
-        }
-    }
-
-    private func updateCountsAndCheckThresholds() {
-        // Must be called on eventQueue
-        let now = Date()
-        let latency1 = settings.detectionLatency1
-        let latency2 = settings.detectionLatency2
-
-        var count1 = 0
-        var count2 = 0
-
-        for i in 0..<eventTimestamps.count {
-            let timestamp = eventTimestamps[i]
-            let age = now.timeIntervalSince(timestamp)
-
-            // Count consecutive events within latency threshold
-            if i > 0 {
-                let timeSincePrevious = timestamp.timeIntervalSince(eventTimestamps[i-1])
-
-                if timeSincePrevious < latency1 {
-                    count1 += 1
-                }
-
-                if timeSincePrevious < latency2 {
-                    count2 += 1
-                }
-            }
-
-            // Don't count events that are too old
-            if age > max(latency1, latency2) * 2 {
-                continue
-            }
-        }
-
-        // Check thresholds with local counts
-        let threshold1Met = count1 >= settings.detectionCountThreshold1
-        let threshold2Met = count2 >= settings.detectionCountThreshold2
-
-        var shouldActivate = false
-
-        if settings.andEnabled {
-            // Both thresholds must be met
-            shouldActivate = threshold1Met && threshold2Met
-        } else {
-            // Either threshold can trigger
-            shouldActivate = threshold1Met || threshold2Met
-        }
-
-        if shouldActivate {
-            print("🚨 InputDetectionManager: THRESHOLD MET!")
-            print("   Count1: \(count1)/\(settings.detectionCountThreshold1) (met: \(threshold1Met))")
-            print("   Count2: \(count2)/\(settings.detectionCountThreshold2) (met: \(threshold2Met))")
-            print("   Mode: \(settings.andEnabled ? "AND" : "OR")")
-            triggerActivation()
-        }
-
-        // Update @Published properties on main thread
-        DispatchQueue.main.async {
-            self.currentCount1 = count1
-            self.currentCount2 = count2
-        }
-    }
-
-    private func triggerActivation() {
-        print("🎯 InputDetectionManager: TRIGGERING PAUSE MODE!")
-
-        // Clear timestamps to prevent immediate re-trigger (on eventQueue)
-        eventTimestamps.removeAll()
-
-        print("🎯 InputDetectionManager: Counts reset. Calling AppState.triggerPauseMode()...")
-
-        // Update @Published properties and trigger pause on main thread
-        DispatchQueue.main.async {
-            self.currentCount1 = 0
-            self.currentCount2 = 0
-
-            print("🎯 InputDetectionManager: Executing AppState.triggerPauseMode() on main thread")
-            AppState.shared.triggerPauseMode()
-            print("🎯 InputDetectionManager: AppState.triggerPauseMode() called")
-        }
-    }
 
     func stop() {
         if let tap = eventTap {

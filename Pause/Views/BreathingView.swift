@@ -10,6 +10,7 @@ import SwiftUI
 struct BreathingView: View {
     @ObservedObject var appState = AppState.shared
     @ObservedObject var settings = Settings.shared
+    @ObservedObject var lockManager = InputLockManager.shared
 
     var body: some View {
         ZStack {
@@ -53,14 +54,35 @@ struct BreathingView: View {
 
                 Spacer()
 
-                // Instructions
+                // Instructions - conditional based on lock state and permissions
                 VStack(spacing: 8) {
-                    Text("Press \(settings.getExitHotkeyString()) to exit early")
-                        .font(.caption)
-                        .foregroundColor(.white.opacity(0.6))
-                    Text("Press \(settings.getSnoozeHotkeyString()) to snooze")
-                        .font(.caption)
-                        .foregroundColor(.white.opacity(0.6))
+                    if settings.lockSessionEnabled {
+                        if lockManager.hasAllPermissions() {
+                            // Lock is enabled AND permissions are granted - truly locked
+                            Text("Session locked - wait for completion")
+                                .font(.caption)
+                                .foregroundColor(.white.opacity(0.6))
+                        } else {
+                            // Lock is enabled BUT missing permissions - not actually locked
+                            Text("⚠️ Session attempted lock but no permissions")
+                                .font(.caption)
+                                .foregroundColor(.yellow.opacity(0.8))
+                            Text("Press \(settings.getExitHotkeyString()) to exit early")
+                                .font(.caption)
+                                .foregroundColor(.white.opacity(0.6))
+                            Text("Press \(settings.getSnoozeHotkeyString()) to snooze")
+                                .font(.caption)
+                                .foregroundColor(.white.opacity(0.6))
+                        }
+                    } else {
+                        // Lock is disabled - show normal shortcuts
+                        Text("Press \(settings.getExitHotkeyString()) to exit early")
+                            .font(.caption)
+                            .foregroundColor(.white.opacity(0.6))
+                        Text("Press \(settings.getSnoozeHotkeyString()) to snooze")
+                            .font(.caption)
+                            .foregroundColor(.white.opacity(0.6))
+                    }
                 }
                 .padding(.bottom, 40)
             }

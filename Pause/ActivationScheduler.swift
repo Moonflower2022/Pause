@@ -72,6 +72,51 @@ class ActivationScheduler: ObservableObject {
         updateSchedule()
     }
 
+    // Public method to enforce minimum buffer on input detection
+    func enforceMinimumBuffer() {
+        guard Settings.shared.detectionEnabled else { return }
+
+        let bufferSeconds = TimeInterval(Settings.shared.inputDelayBuffer)
+        let now = Date()
+        let minimumFireDate = now.addingTimeInterval(bufferSeconds)
+
+        var didReschedule = false
+
+        // Check repeated timer
+        if let repeatedDate = nextRepeatedActivation, repeatedDate < minimumFireDate {
+            print("⌨️ Input detected: Rescheduling repeated timer from \(Int(repeatedDate.timeIntervalSinceNow))s to \(Int(bufferSeconds))s")
+            clearRepeatedTimer()
+            if Settings.shared.repeatedEnabled {
+                setupRepeatedTimerWithDelay(bufferSeconds)
+            }
+            didReschedule = true
+        }
+
+        // Check random timer
+        if let randomDate = nextRandomActivation, randomDate < minimumFireDate {
+            print("⌨️ Input detected: Rescheduling random timer from \(Int(randomDate.timeIntervalSinceNow))s to \(Int(bufferSeconds))s")
+            clearRandomTimer()
+            if Settings.shared.randomEnabled {
+                setupRandomTimerWithDelay(bufferSeconds)
+            }
+            didReschedule = true
+        }
+
+        // Check scheduled timer
+        if let scheduledDate = nextScheduledActivation, scheduledDate < minimumFireDate {
+            print("⌨️ Input detected: Rescheduling scheduled timer from \(Int(scheduledDate.timeIntervalSinceNow))s to \(Int(bufferSeconds))s")
+            clearScheduledTimers()
+            if Settings.shared.scheduledEnabled {
+                setupScheduledTimersWithDelay(bufferSeconds)
+            }
+            didReschedule = true
+        }
+
+        if !didReschedule && Settings.shared.detectionEnabled {
+            // No timers were close enough to reschedule - this is expected for distant timers
+        }
+    }
+
     private func setupRepeatedTimer() {
         let intervalMinutes = Settings.shared.repeatedInterval
         // Special case: 0 minutes means 30 seconds
@@ -98,6 +143,34 @@ class ActivationScheduler: ObservableObject {
             }
 
             // Update the next fire date for the next interval
+            let nextFire = Date().addingTimeInterval(intervalSeconds)
+            DispatchQueue.main.async {
+                self?.nextRepeatedActivation = nextFire
+            }
+        }
+    }
+
+    private func setupRepeatedTimerWithDelay(_ delaySeconds: TimeInterval) {
+        let intervalMinutes = Settings.shared.repeatedInterval
+        let intervalSeconds = intervalMinutes == 0 ? TimeInterval(30) : TimeInterval(intervalMinutes * 60)
+
+        let fireDate = Date().addingTimeInterval(delaySeconds)
+
+        DispatchQueue.main.async {
+            self.nextRepeatedActivation = fireDate
+        }
+
+        repeatedTimer = Timer.scheduledTimer(withTimeInterval: delaySeconds, repeats: true) { [weak self] _ in
+            print("Repeated timer fired")
+
+            if Settings.shared.isInNoGoTime() {
+                print("Skipping activation - in no-go time")
+            } else {
+                print("Triggering pause mode")
+                AppState.shared.triggerPauseMode()
+            }
+
+            // After first fire, use normal interval
             let nextFire = Date().addingTimeInterval(intervalSeconds)
             DispatchQueue.main.async {
                 self?.nextRepeatedActivation = nextFire
@@ -146,6 +219,28 @@ class ActivationScheduler: ObservableObject {
         }
     }
 
+    private func setupRandomTimerWithDelay(_ delaySeconds: TimeInterval) {
+        let fireDate = Date().addingTimeInterval(delaySeconds)
+
+        DispatchQueue.main.async {
+            self.nextRandomActivation = fireDate
+        }
+
+        randomTimer = Timer.scheduledTimer(withTimeInterval: delaySeconds, repeats: false) { [weak self] _ in
+            print("Random timer fired (after delay)")
+
+            if Settings.shared.isInNoGoTime() {
+                print("Skipping activation - in no-go time")
+            } else {
+                print("Triggering pause mode")
+                AppState.shared.triggerPauseMode()
+            }
+
+            // Schedule next random timer normally
+            self?.setupRandomTimer()
+        }
+    }
+
     private func setupScheduledTimers() {
         let scheduledTimes = Settings.shared.scheduledTimes
 
@@ -171,6 +266,23 @@ class ActivationScheduler: ObservableObject {
         DispatchQueue.main.async {
             self.nextScheduledActivation = earliestDate
         }
+    }
+
+    private func setupScheduledTimersWithDelay(_ delaySeconds: TimeInterval) {
+        // For scheduled timers, we just delay them all by creating a single timer
+        // that will re-setup all scheduled timers after the delay
+        let fireDate = Date().addingTimeInterval(delaySeconds)
+
+        DispatchQueue.main.async {
+            self.nextScheduledActivation = fireDate
+        }
+
+        let delayTimer = Timer.scheduledTimer(withTimeInterval: delaySeconds, repeats: false) { [weak self] _ in
+            print("Scheduled timer delay expired - setting up scheduled timers normally")
+            self?.setupScheduledTimers()
+        }
+
+        scheduledTimers.append(delayTimer)
     }
 
     private func createDailyTimer(for scheduledTime: ScheduledTime) -> (Timer, Date)? {
