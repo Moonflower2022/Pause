@@ -14,6 +14,15 @@ struct GeneralSettingsTab: View {
     var body: some View {
         Form {
             Section {
+                Toggle("Launch at Login", isOn: $settings.launchAtLogin)
+            } header: {
+                Text("Startup")
+            } footer: {
+                Text("Automatically launch Pause when you log in to your Mac.")
+                    .font(.caption)
+            }
+
+            Section {
                 Toggle("Show in Menu Bar", isOn: $settings.showInMenuBar)
 
                 Toggle("Timer Instead of Icon", isOn: $settings.menuBarShowTimer)
@@ -41,6 +50,10 @@ struct GeneralSettingsTab: View {
         }
         .formStyle(.grouped)
         .scrollContentBackground(.hidden)
+        .onAppear {
+            // Sync launch at login status with system on appear
+            settings.syncLaunchAtLoginStatus()
+        }
         .alert("Reset All Settings?", isPresented: $showingResetAlert) {
             Button("Cancel", role: .cancel) { }
             Button("Reset", role: .destructive) {

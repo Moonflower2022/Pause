@@ -7,6 +7,7 @@
 
 import Foundation
 import Carbon.HIToolbox
+import ServiceManagement
 
 struct ScheduledTime: Codable, Identifiable, Equatable {
     var id: UUID
@@ -152,6 +153,13 @@ class Settings: ObservableObject {
     @Published var endSoundVolume: Double {
         didSet {
             UserDefaults.standard.set(endSoundVolume, forKey: "endSoundVolume")
+        }
+    }
+
+    @Published var launchAtLogin: Bool {
+        didSet {
+            UserDefaults.standard.set(launchAtLogin, forKey: "launchAtLogin")
+            updateLaunchAtLogin()
         }
     }
 
@@ -380,6 +388,10 @@ class Settings: ObservableObject {
         self.startSoundVolume = UserDefaults.standard.object(forKey: "startSoundVolume") as? Double ?? 0.5
         self.endSoundEnabled = UserDefaults.standard.object(forKey: "endSoundEnabled") as? Bool ?? true
         self.endSoundVolume = UserDefaults.standard.object(forKey: "endSoundVolume") as? Double ?? 0.5
+
+        // Launch at login - default to true for first launch
+        self.launchAtLogin = UserDefaults.standard.object(forKey: "launchAtLogin") as? Bool ?? true
+
         self.showInMenuBar = UserDefaults.standard.object(forKey: "showInMenuBar") as? Bool ?? true
         self.menuBarShowTimer = UserDefaults.standard.object(forKey: "menuBarShowTimer") as? Bool ?? true
         self.sessionDisplayText = UserDefaults.standard.object(forKey: "sessionDisplayText") as? String ?? "Just Breathe"
@@ -448,6 +460,9 @@ class Settings: ObservableObject {
 
         // Load UI state
         self.selectedTab = UserDefaults.standard.object(forKey: "selectedTab") as? Int ?? 0
+
+        // Apply launch at login setting on init
+        updateLaunchAtLogin()
     }
 
     func getActualPauseDuration() -> Int {
@@ -588,6 +603,41 @@ class Settings: ObservableObject {
         }
     }
 
+    // MARK: - Launch at Login
+
+    private func updateLaunchAtLogin() {
+        do {
+            if launchAtLogin {
+                if SMAppService.mainApp.status == .enabled {
+                    print("✅ Launch at login already enabled")
+                } else {
+                    try SMAppService.mainApp.register()
+                    print("✅ Launch at login enabled")
+                }
+            } else {
+                if SMAppService.mainApp.status == .enabled {
+                    try SMAppService.mainApp.unregister()
+                    print("🔴 Launch at login disabled")
+                } else {
+                    print("🔴 Launch at login already disabled")
+                }
+            }
+        } catch {
+            print("❌ Failed to update launch at login: \(error.localizedDescription)")
+        }
+    }
+
+    // Sync the setting with actual system status
+    func syncLaunchAtLoginStatus() {
+        let systemStatus = SMAppService.mainApp.status == .enabled
+        if launchAtLogin != systemStatus {
+            // Update without triggering didSet
+            DispatchQueue.main.async {
+                self.launchAtLogin = systemStatus
+            }
+        }
+    }
+
     // MARK: - No-Go Time Management
 
     func deleteNoGoTime(at offsets: IndexSet) {
@@ -706,6 +756,9 @@ class Settings: ObservableObject {
         startSoundVolume = 0.5
         endSoundEnabled = true
         endSoundVolume = 0.5
+
+        // General settings
+        launchAtLogin = true
 
         // Menu bar settings
         showInMenuBar = true
