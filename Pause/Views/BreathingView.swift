@@ -11,18 +11,30 @@ struct BreathingView: View {
     @ObservedObject var appState = AppState.shared
     @ObservedObject var settings = Settings.shared
     @ObservedObject var lockManager = InputLockManager.shared
+    @State private var gradientRotation: Double = 0
 
     var body: some View {
         ZStack {
-            // Background gradient
-            LinearGradient(
-                gradient: Gradient(colors: [
-                    Color(red: 0.1, green: 0.2, blue: 0.4),
-                    Color(red: 0.2, green: 0.3, blue: 0.5)
-                ]),
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
+            // Animated background gradient - green theme
+            TimelineView(.animation) { context in
+                let rotation = (context.date.timeIntervalSinceReferenceDate / 8.0).truncatingRemainder(dividingBy: 1.0)
+
+                LinearGradient(
+                    gradient: Gradient(colors: [
+                        Color(red: 151/255, green: 187/255, blue: 101/255),  // Dark green
+                        Color(red: 198/255, green: 225/255, blue: 116/255),  // Light green
+                        Color(red: 215/255, green: 225/255, blue: 199/255)   // Pale light green
+                    ]),
+                    startPoint: UnitPoint(
+                        x: 0.5 + 0.5 * cos(rotation * 2 * .pi),
+                        y: 0.5 + 0.5 * sin(rotation * 2 * .pi)
+                    ),
+                    endPoint: UnitPoint(
+                        x: 0.5 - 0.5 * cos(rotation * 2 * .pi),
+                        y: 0.5 - 0.5 * sin(rotation * 2 * .pi)
+                    )
+                )
+            }
             .ignoresSafeArea()
 
             VStack(spacing: 40) {
@@ -64,24 +76,29 @@ struct BreathingView: View {
                                 .foregroundColor(.white.opacity(0.6))
                         } else {
                             // Lock is enabled BUT missing permissions - not actually locked
-                            Text("⚠️ Session attempted lock but no permissions")
-                                .font(.caption)
-                                .foregroundColor(.yellow.opacity(0.8))
-                            Text("Press \(settings.getExitHotkeyString()) to exit early")
-                                .font(.caption)
-                                .foregroundColor(.white.opacity(0.6))
-                            Text("Press \(settings.getSnoozeHotkeyString()) to snooze")
-                                .font(.caption)
-                                .foregroundColor(.white.opacity(0.6))
+                            VStack(spacing: 8) {
+                                Text("⚠️ Session attempted lock but no permissions")
+                                    .font(.caption)
+                                    .foregroundColor(.black)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 6)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 6)
+                                            .fill(.yellow.opacity(0.9))
+                                    )
+
+                                Text("Press \(settings.getExitHotkeyString()) to exit early")
+                                    .foregroundColor(.white)
+                                Text("Press \(settings.getSnoozeHotkeyString()) to snooze")
+                                    .foregroundColor(.white)
+                            }
                         }
                     } else {
                         // Lock is disabled - show normal shortcuts
                         Text("Press \(settings.getExitHotkeyString()) to exit early")
-                            .font(.caption)
-                            .foregroundColor(.white.opacity(0.6))
+                            .foregroundColor(.white)
                         Text("Press \(settings.getSnoozeHotkeyString()) to snooze")
-                            .font(.caption)
-                            .foregroundColor(.white.opacity(0.6))
+                            .foregroundColor(.white)
                     }
                 }
                 .padding(.bottom, 40)

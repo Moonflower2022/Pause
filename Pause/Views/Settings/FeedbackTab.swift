@@ -65,7 +65,7 @@ struct FeedbackTab: View {
                 }) {
                     HStack {
                         Image(systemName: "envelope")
-                            .foregroundColor(.blue)
+                            .foregroundColor(.green)
                             .frame(width: 24)
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Email Feedback")
