@@ -108,7 +108,9 @@ const goHome = () => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, rgb(151, 187, 101), rgb(198, 225, 116), rgb(215, 225, 199), rgb(198, 225, 116), rgb(151, 187, 101));
+  background-size: 400% 400%;
+  animation: gradientShift 15s ease infinite;
   color: white;
   overflow: hidden;
   position: relative;
@@ -146,12 +148,14 @@ const goHome = () => {
   font-weight: 700;
   margin-bottom: 2rem;
   letter-spacing: -0.02em;
+  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .subtitle {
   font-size: 1.25rem;
   margin-bottom: 2rem;
   opacity: 0.95;
+  text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.3);
 }
 
 .download-section {
@@ -195,7 +199,7 @@ const goHome = () => {
   font-size: 1.1rem;
   font-weight: 600;
   background: white;
-  color: #667eea;
+  color: rgb(151, 187, 101);
   border: none;
   border-radius: 8px;
   cursor: pointer;
@@ -249,6 +253,7 @@ const goHome = () => {
   font-size: 1.75rem;
   margin-bottom: 1.5rem;
   font-weight: 600;
+  text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.2);
 }
 
 .steps-list {
@@ -285,6 +290,18 @@ const goHome = () => {
   }
   to {
     opacity: 1;
+  }
+}
+
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
   }
 }
 

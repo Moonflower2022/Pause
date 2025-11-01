@@ -220,9 +220,10 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, rgb(151, 187, 101), rgb(198, 225, 116), rgb(215, 225, 199), rgb(198, 225, 116), rgb(151, 187, 101));
+  background-size: 400% 400%;
+  animation: gradientShift 15s ease infinite, fadeIn 1s ease-out;
   color: white;
-  animation: fadeIn 1s ease-out;
 }
 
 @keyframes fadeIn {
@@ -231,6 +232,18 @@ onUnmounted(() => {
   }
   to {
     opacity: 1;
+  }
+}
+
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
   }
 }
 
@@ -246,6 +259,7 @@ onUnmounted(() => {
   margin-bottom: 1rem;
   letter-spacing: -0.02em;
   animation: fadeInUp 0.8s ease-out;
+  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .tagline {
@@ -254,6 +268,7 @@ onUnmounted(() => {
   margin-bottom: 1.5rem;
   opacity: 0.95;
   animation: fadeInUp 0.8s ease-out 0.2s backwards;
+  text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.3);
 }
 
 .description {
@@ -265,11 +280,12 @@ onUnmounted(() => {
   margin-left: auto;
   margin-right: auto;
   animation: fadeInUp 0.8s ease-out 0.4s backwards;
+  text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.3);
 }
 
 .cta-button {
   background: white;
-  color: #667eea;
+  color: rgb(151, 187, 101);
   padding: 1.25rem 3rem;
   font-size: 1.25rem;
   font-weight: 600;
