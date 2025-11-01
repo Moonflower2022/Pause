@@ -247,7 +247,8 @@ class AppState: NSObject, ObservableObject, AVAudioPlayerDelegate {
             // Ensure Mission Control treats this as the primary fullscreen window
             window.collectionBehavior.insert(.fullScreenPrimary)
 
-            DispatchQueue.main.async {
+            // Wait for window to be ready before toggling fullscreen (same delay as new windows)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 // Only toggle fullscreen if not already fullscreen
                 if !window.styleMask.contains(.fullScreen) {
                     window.toggleFullScreen(nil)
@@ -277,7 +278,7 @@ class AppState: NSObject, ObservableObject, AVAudioPlayerDelegate {
             newWindow.makeKeyAndOrderFront(nil)
 
             // Wait for the window to be ready, then go fullscreen
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 newWindow.toggleFullScreen(nil)
             }
         }
