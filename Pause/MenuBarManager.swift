@@ -61,14 +61,14 @@ class MenuBarManager: ObservableObject {
 
         menu.addItem(NSMenuItem.separator())
 
-        // Show Settings menu item
-        let settingsItem = NSMenuItem(
-            title: "Settings...",
-            action: #selector(showSettings),
-            keyEquivalent: ","
+        // New Window menu item
+        let newWindowItem = NSMenuItem(
+            title: "New Window",
+            action: #selector(newWindow),
+            keyEquivalent: "n"
         )
-        settingsItem.target = self
-        menu.addItem(settingsItem)
+        newWindowItem.target = self
+        menu.addItem(newWindowItem)
 
         menu.addItem(NSMenuItem.separator())
 
@@ -147,59 +147,26 @@ class MenuBarManager: ObservableObject {
         AppState.shared.triggerPauseMode()
     }
 
-    @objc private func showSettings() {
+    @objc private func newWindow() {
         // Activate the app
         NSApp.activate(ignoringOtherApps: true)
 
-        // First check if we have a settings window in our created windows
-        let settingsWindow = AppState.shared.createdWindows.first { window in
-            // Look for normal titled windows that aren't fullscreen
-            window.styleMask.contains(.titled) &&
-            !window.styleMask.contains(.borderless) &&
-            !window.styleMask.contains(.fullScreen)
-        }
+        // Always create a new window - it's a feature!
+        let contentView = ContentView()
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 600, height: 550),
+            styleMask: [.titled, .closable, .miniaturizable, .resizable],
+            backing: .buffered,
+            defer: false
+        )
+        window.center()
+        window.isReleasedWhenClosed = false  // Keep window alive when closed
+        window.contentView = NSHostingView(rootView: contentView)
+        window.title = "Pause"
+        window.makeKeyAndOrderFront(nil)
 
-        if let window = settingsWindow {
-            // Window exists, just bring it to front
-            window.makeKeyAndOrderFront(nil)
-            window.orderFrontRegardless()
-        } else {
-            // Check if there's a window in NSApp.windows (from WindowGroup)
-            let mainWindow = NSApp.windows.first { window in
-                window.styleMask.contains(.titled) &&
-                !window.styleMask.contains(.borderless) &&
-                !window.styleMask.contains(.fullScreen) &&
-                window.contentView is NSHostingView<ContentView>
-            }
-
-            if let window = mainWindow {
-                // Window exists, just bring it to front
-                window.makeKeyAndOrderFront(nil)
-                window.orderFrontRegardless()
-
-                // Add to created windows for future reuse
-                if !AppState.shared.createdWindows.contains(where: { $0 === window }) {
-                    AppState.shared.createdWindows.append(window)
-                }
-            } else {
-                // No window exists, create a new one
-                let contentView = ContentView()
-                let window = NSWindow(
-                    contentRect: NSRect(x: 0, y: 0, width: 600, height: 550),
-                    styleMask: [.titled, .closable, .miniaturizable, .resizable],
-                    backing: .buffered,
-                    defer: false
-                )
-                window.center()
-                window.isReleasedWhenClosed = false  // Keep window alive when closed
-                window.contentView = NSHostingView(rootView: contentView)
-                window.title = "Pause"
-                window.makeKeyAndOrderFront(nil)
-
-                // Keep a strong reference to prevent deallocation
-                AppState.shared.createdWindows.append(window)
-            }
-        }
+        // Keep a strong reference to prevent deallocation
+        AppState.shared.createdWindows.append(window)
     }
 
     @objc private func quitApp() {
