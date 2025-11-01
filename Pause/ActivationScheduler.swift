@@ -17,7 +17,6 @@ class ActivationScheduler: ObservableObject {
     private var repeatedTimer: Timer?
     private var randomTimer: Timer?
     private var scheduledTimers: [Timer] = []
-    private var cleanupTimer: Timer?
 
     // Paused state tracking
     private var isPaused = false
@@ -28,7 +27,6 @@ class ActivationScheduler: ObservableObject {
     private init() {
         // Initial setup
         updateSchedule()
-        setupCleanupTimer()
     }
 
     func updateSchedule() {
@@ -443,28 +441,6 @@ class ActivationScheduler: ObservableObject {
         nextScheduledActivation = nil
     }
 
-    // MARK: - No-Go Time Cleanup
-
-    private func setupCleanupTimer() {
-        // Calculate time until next midnight
-        let calendar = Calendar.current
-        let now = Date()
-
-        guard let tomorrow = calendar.date(byAdding: .day, value: 1, to: now) else { return }
-        let nextMidnight = calendar.startOfDay(for: tomorrow)
-        let timeUntilMidnight = nextMidnight.timeIntervalSince(now)
-
-        print("Setting up no-go cleanup timer - will run at midnight (in \(Int(timeUntilMidnight/3600)) hours)")
-
-        cleanupTimer = Timer.scheduledTimer(withTimeInterval: timeUntilMidnight, repeats: false) { [weak self] _ in
-            print("Running no-go cleanup at midnight")
-            Settings.shared.cleanupExpiredNoGoTimes()
-
-            // Reschedule for next midnight
-            self?.setupCleanupTimer()
-        }
-    }
-
     // MARK: - Helper Methods
 
     /// Returns the next activation time and its type (Repeated, Random, or Scheduled)
@@ -582,7 +558,5 @@ class ActivationScheduler: ObservableObject {
 
     deinit {
         clearAllTimers()
-        cleanupTimer?.invalidate()
-        cleanupTimer = nil
     }
 }

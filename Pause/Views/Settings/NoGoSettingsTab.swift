@@ -124,55 +124,6 @@ struct NoGoSettingsTab: View {
                 Text("These times only apply on the selected day of the week.")
                     .font(.caption)
             }
-
-            // Today-only no-go times (auto-deleted tomorrow)
-            Section {
-                ForEach($settings.noGoTimes.filter { !$0.wrappedValue.isRecurring && $0.wrappedValue.dayOfWeek == nil }) { $noGoTime in
-                    NoGoTimeRow(noGoTime: $noGoTime, onDelete: {
-                        settings.deleteNoGoTime(id: noGoTime.id)
-                    })
-                }
-
-                HStack {
-                    Button("Add Today No-Go Time") {
-                        let now = Date()
-                        let calendar = Calendar.current
-
-                        // Create default start time (current hour)
-                        var startComponents = calendar.dateComponents([.year, .month, .day, .hour], from: now)
-                        startComponents.minute = 0
-
-                        // Create default end time (current hour + 1)
-                        var endComponents = calendar.dateComponents([.year, .month, .day, .hour], from: now)
-                        endComponents.hour = (endComponents.hour ?? 0) + 1
-                        endComponents.minute = 0
-
-                        if let startTime = calendar.date(from: startComponents),
-                           let endTime = calendar.date(from: endComponents) {
-                            settings.noGoTimes.append(NoGoTime(
-                                startTime: startTime,
-                                endTime: endTime,
-                                name: "Focus Time",
-                                isRecurring: false,
-                                dayOfWeek: nil
-                            ))
-                        }
-                    }
-                    .disabled(!settings.noGoEnabled)
-
-                    Spacer()
-
-                    Button("Clear All Today") {
-                        settings.noGoTimes.removeAll { !$0.isRecurring && $0.dayOfWeek == nil }
-                    }
-                    .disabled(!settings.noGoEnabled || settings.noGoTimes.filter({ !$0.isRecurring && $0.dayOfWeek == nil }).isEmpty)
-                }
-            } header: {
-                Text("Today No-Go Times")
-            } footer: {
-                Text("These times only apply today and will be automatically removed tomorrow.")
-                    .font(.caption)
-            }
         }
         .formStyle(.grouped)
         .scrollContentBackground(.hidden)

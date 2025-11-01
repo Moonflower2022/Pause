@@ -68,9 +68,10 @@ struct SettingsView: View {
                 TabButton(icon: "speaker.wave.2", label: "Audio", tag: 2, selectedTab: $settings.selectedTab)
                 TabButton(icon: "clock", label: "Activation", tag: 3, selectedTab: $settings.selectedTab)
                 TabButton(icon: "eye", label: "Detection", tag: 4, selectedTab: $settings.selectedTab)
-                TabButton(icon: "hand.raised", label: "No-Go", tag: 5, selectedTab: $settings.selectedTab)
-                TabButton(icon: "command", label: "Shortcuts", tag: 6, selectedTab: $settings.selectedTab)
-                TabButton(icon: "envelope.badge", label: "Feedback", tag: 7, selectedTab: $settings.selectedTab)
+                TabButton(icon: "scroll", label: "Doom Scroll", tag: 5, selectedTab: $settings.selectedTab)
+                TabButton(icon: "hand.raised", label: "No-Go", tag: 6, selectedTab: $settings.selectedTab)
+                TabButton(icon: "command", label: "Shortcuts", tag: 7, selectedTab: $settings.selectedTab)
+                TabButton(icon: "envelope.badge", label: "Feedback", tag: 8, selectedTab: $settings.selectedTab)
             }
             .padding(.vertical, 16)
 
@@ -90,10 +91,12 @@ struct SettingsView: View {
                 case 4:
                     DetectionSettingsTab()
                 case 5:
-                    NoGoSettingsTab()
+                    DoomScrollSettingsTab()
                 case 6:
-                    ShortcutsSettingsTab()
+                    NoGoSettingsTab()
                 case 7:
+                    ShortcutsSettingsTab()
+                case 8:
                     FeedbackTab()
                 default:
                     GeneralSettingsTab()

@@ -91,6 +91,37 @@ class Settings: ObservableObject {
         }
     }
 
+    // Doom scroll detection settings
+    @Published var doomScrollEnabled: Bool {
+        didSet {
+            UserDefaults.standard.set(doomScrollEnabled, forKey: "doomScrollEnabled")
+        }
+    }
+
+    @Published var doomScrollVelocityThreshold: Int {
+        didSet {
+            UserDefaults.standard.set(doomScrollVelocityThreshold, forKey: "doomScrollVelocityThreshold")
+        }
+    }
+
+    @Published var doomScrollDirectionalityThreshold: Double {
+        didSet {
+            UserDefaults.standard.set(doomScrollDirectionalityThreshold, forKey: "doomScrollDirectionalityThreshold")
+        }
+    }
+
+    @Published var doomScrollPauseThreshold: Double {
+        didSet {
+            UserDefaults.standard.set(doomScrollPauseThreshold, forKey: "doomScrollPauseThreshold")
+        }
+    }
+
+    @Published var doomScrollWindowDuration: Int {
+        didSet {
+            UserDefaults.standard.set(doomScrollWindowDuration, forKey: "doomScrollWindowDuration")
+        }
+    }
+
     @Published var pauseDuration: Int {
         didSet {
             UserDefaults.standard.set(pauseDuration, forKey: "pauseDuration")
@@ -377,6 +408,14 @@ class Settings: ObservableObject {
         // Load from UserDefaults with default values
         self.detectionEnabled = UserDefaults.standard.object(forKey: "detectionEnabled") as? Bool ?? true
         self.inputDelayBuffer = UserDefaults.standard.object(forKey: "inputDelayBuffer") as? Int ?? 60
+
+        // Load doom scroll detection settings
+        self.doomScrollEnabled = UserDefaults.standard.object(forKey: "doomScrollEnabled") as? Bool ?? false
+        self.doomScrollVelocityThreshold = UserDefaults.standard.object(forKey: "doomScrollVelocityThreshold") as? Int ?? 40 // actions per minute
+        self.doomScrollDirectionalityThreshold = UserDefaults.standard.object(forKey: "doomScrollDirectionalityThreshold") as? Double ?? 0.85 // 85% forward
+        self.doomScrollPauseThreshold = UserDefaults.standard.object(forKey: "doomScrollPauseThreshold") as? Double ?? 1.5 // 1.5 seconds median gap
+        self.doomScrollWindowDuration = UserDefaults.standard.object(forKey: "doomScrollWindowDuration") as? Int ?? 3 // 3 minutes rolling window
+
         self.pauseDuration = UserDefaults.standard.object(forKey: "pauseDuration") as? Int ?? 60
         self.pauseVariance = UserDefaults.standard.object(forKey: "pauseVariance") as? Int ?? 0
         self.soundEnabled = UserDefaults.standard.object(forKey: "soundEnabled") as? Bool ?? true
@@ -659,29 +698,6 @@ class Settings: ObservableObject {
         noGoTimes.removeAll()
     }
 
-    // Clean up today-only no-go times that have expired (moved to next day)
-    // Only removes entries that are today-only (isRecurring=false AND dayOfWeek=nil)
-    func cleanupExpiredNoGoTimes() {
-        let calendar = Calendar.current
-        let now = Date()
-
-        let expiredIds = noGoTimes.compactMap { noGoTime -> UUID? in
-            // Only clean up today-only entries (not day-specific entries with dayOfWeek)
-            guard !noGoTime.isRecurring && noGoTime.dayOfWeek == nil else { return nil }
-
-            // Check if creation date is from a different day than today
-            let creationDay = calendar.startOfDay(for: noGoTime.creationDate)
-            let today = calendar.startOfDay(for: now)
-
-            return creationDay < today ? noGoTime.id : nil
-        }
-
-        // Only modify if there are expired items
-        if !expiredIds.isEmpty {
-            noGoTimes.removeAll { expiredIds.contains($0.id) }
-        }
-    }
-
     // Check if current time is within a no-go period
     func isInNoGoTime() -> Bool {
         guard noGoEnabled else { return false }
@@ -743,6 +759,13 @@ class Settings: ObservableObject {
         // Detection settings
         detectionEnabled = true
         inputDelayBuffer = 60
+
+        // Doom scroll detection settings
+        doomScrollEnabled = false
+        doomScrollVelocityThreshold = 40
+        doomScrollDirectionalityThreshold = 0.85
+        doomScrollPauseThreshold = 1.5
+        doomScrollWindowDuration = 3
 
         // Session settings
         pauseDuration = 60

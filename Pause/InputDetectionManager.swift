@@ -87,11 +87,12 @@ class InputDetectionManager: ObservableObject {
     private func setupEventTap() {
         print("🔍 InputDetectionManager: Setting up event tap...")
 
-        // Monitor keyboard and mouse events
+        // Monitor keyboard, mouse, and scroll events
         let eventMask = (1 << CGEventType.keyDown.rawValue) |
                        (1 << CGEventType.leftMouseDown.rawValue) |
                        (1 << CGEventType.rightMouseDown.rawValue) |
-                       (1 << CGEventType.otherMouseDown.rawValue)
+                       (1 << CGEventType.otherMouseDown.rawValue) |
+                       (1 << CGEventType.scrollWheel.rawValue)
 
         print("🔍 InputDetectionManager: Event mask: \(eventMask)")
 
@@ -141,6 +142,18 @@ class InputDetectionManager: ObservableObject {
                 print("📥 InputDetectionManager: Event #\(eventCount) received (type: \(type.rawValue))")
             } else if eventCount == 6 {
                 print("📥 InputDetectionManager: Event tap is working! (suppressing further event logs)")
+            }
+
+            // Track doom scrolling events
+            if type == .scrollWheel {
+                let deltaY = event.getDoubleValueField(.scrollWheelEventDeltaAxis1)
+                DoomScrollDetector.shared.recordScrollEvent(deltaY: deltaY)
+            } else if type == .keyDown {
+                let keyCode = UInt16(event.getIntegerValueField(.keyboardEventKeycode))
+                // Only track arrow keys for doom scroll detection
+                if [123, 124, 125, 126].contains(keyCode) {
+                    DoomScrollDetector.shared.recordKeyEvent(keyCode: keyCode)
+                }
             }
 
             guard self.settings.detectionEnabled else {
