@@ -10,6 +10,7 @@ import AppKit
 
 struct SessionSettingsTab: View {
     @ObservedObject var settings = Settings.shared
+    @ObservedObject var lockManager = InputLockManager.shared
 
     var body: some View {
         Form {
@@ -78,7 +79,7 @@ struct SessionSettingsTab: View {
                         Text("Accessibility Permission")
                             .frame(width: 180, alignment: .leading)
                         Spacer()
-                        if InputLockManager.shared.hasAccessibilityPermission {
+                        if lockManager.hasAccessibilityPermission {
                             Text("✅ Granted")
                                 .foregroundColor(.green)
                         } else {
@@ -87,7 +88,7 @@ struct SessionSettingsTab: View {
                         }
                     }
 
-                    if !InputLockManager.shared.hasAccessibilityPermission {
+                    if !lockManager.hasAccessibilityPermission {
                         Button("Open System Settings") {
                             if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
                                 NSWorkspace.shared.open(url)
@@ -99,7 +100,7 @@ struct SessionSettingsTab: View {
                         Text("Input Monitoring Permission")
                             .frame(width: 180, alignment: .leading)
                         Spacer()
-                        if InputLockManager.shared.hasInputMonitoringPermission {
+                        if lockManager.hasInputMonitoringPermission {
                             Text("✅ Granted")
                                 .foregroundColor(.green)
                         } else {
@@ -108,7 +109,7 @@ struct SessionSettingsTab: View {
                         }
                     }
 
-                    if !InputLockManager.shared.hasInputMonitoringPermission {
+                    if !lockManager.hasInputMonitoringPermission {
                         Button("Open System Settings") {
                             if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent") {
                                 NSWorkspace.shared.open(url)
@@ -120,7 +121,7 @@ struct SessionSettingsTab: View {
                 Text("Input Blocking")
             } footer: {
                 if settings.lockSessionEnabled {
-                    if InputLockManager.shared.hasAllPermissions() {
+                    if lockManager.hasAllPermissions() {
                         Text("Input blocking is ready. All keyboard, mouse, and trackpad input will be blocked during meditation sessions.")
                             .font(.caption)
                     } else {

@@ -7,23 +7,59 @@
 
 import Foundation
 import ApplicationServices
+import Combine
 
-class InputLockManager {
+class InputLockManager: ObservableObject {
     static let shared = InputLockManager()
 
     private var eventTap: CFMachPort?
     private var runLoopSource: CFRunLoopSource?
+    private var permissionCheckTimer: Timer?
 
-    private init() {}
+    // Published properties that update automatically
+    @Published var hasAccessibilityPermission: Bool = false
+    @Published var hasInputMonitoringPermission: Bool = false
 
-    // Check if the app has accessibility permission (for mouse/trackpad blocking)
-    var hasAccessibilityPermission: Bool {
-        return AXIsProcessTrusted()
+    private init() {
+        // Initial check
+        updatePermissions()
+
+        // Monitor accessibility permission changes via distributed notification
+        DistributedNotificationCenter.default().addObserver(
+            self,
+            selector: #selector(accessibilityChanged),
+            name: NSNotification.Name("com.apple.accessibility.api"),
+            object: nil
+        )
+
+        // Poll for input monitoring permission changes (no notification available)
+        permissionCheckTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            self?.updatePermissions()
+        }
     }
 
-    // Check if the app has input monitoring permission (for keyboard blocking)
-    var hasInputMonitoringPermission: Bool {
-        return CGPreflightListenEventAccess()
+    @objc private func accessibilityChanged() {
+        // Delay slightly as permission changes take time to propagate
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+            self?.updatePermissions()
+        }
+    }
+
+    private func updatePermissions() {
+        let newAccessibility = AXIsProcessTrusted()
+        let newInputMonitoring = CGPreflightListenEventAccess()
+
+        if newAccessibility != hasAccessibilityPermission {
+            DispatchQueue.main.async {
+                self.hasAccessibilityPermission = newAccessibility
+            }
+        }
+
+        if newInputMonitoring != hasInputMonitoringPermission {
+            DispatchQueue.main.async {
+                self.hasInputMonitoringPermission = newInputMonitoring
+            }
+        }
     }
 
     // Check if the app has both permissions needed for input blocking
@@ -155,6 +191,8 @@ class InputLockManager {
     }
 
     deinit {
+        permissionCheckTimer?.invalidate()
+        DistributedNotificationCenter.default().removeObserver(self)
         stopBlocking()
     }
 }

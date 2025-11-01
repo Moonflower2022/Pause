@@ -39,7 +39,31 @@ class InputDetectionManager: ObservableObject {
             }
             .store(in: &cancellables)
 
+        // Monitor permission changes
+        Timer.publish(every: 1.0, on: .main, in: .common)
+            .autoconnect()
+            .sink { [weak self] _ in
+                self?.checkPermissionStatus()
+            }
+            .store(in: &cancellables)
+
         print("🔍 InputDetectionManager: Initialization complete. Permission: \(hasInputMonitoringPermission)")
+    }
+
+    private func checkPermissionStatus() {
+        let status = IOHIDCheckAccess(kIOHIDRequestTypeListenEvent)
+        let newPermissionStatus = (status == kIOHIDAccessTypeGranted)
+
+        if newPermissionStatus != hasInputMonitoringPermission {
+            hasInputMonitoringPermission = newPermissionStatus
+            print("🔍 InputDetectionManager: Permission status changed to: \(hasInputMonitoringPermission)")
+
+            // If permission was just granted, set up event tap
+            if hasInputMonitoringPermission && eventTap == nil {
+                print("🔍 InputDetectionManager: Permission granted, setting up event tap...")
+                setupEventTap()
+            }
+        }
     }
 
     private func checkInputMonitoringPermission() {
