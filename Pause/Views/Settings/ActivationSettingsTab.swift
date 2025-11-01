@@ -9,6 +9,7 @@ import SwiftUI
 
 struct ActivationSettingsTab: View {
     @ObservedObject var settings = Settings.shared
+    @State private var showingAppPicker = false
 
     var body: some View {
         Form {
@@ -176,8 +177,119 @@ struct ActivationSettingsTab: View {
                 Text("When enabled, any activation (manual, repeated, random, or scheduled) will reset and recalculate all pending timers. When disabled, timers continue on their original schedules.")
                     .font(.caption)
             }
+
+            // App Launch Activation
+            Section {
+                Toggle("Activate on App Launch", isOn: $settings.appLaunchEnabled)
+                    .toggleStyle(.switch)
+
+                if settings.appLaunchEnabled {
+                    ForEach($settings.monitoredApps) { $app in
+                        VStack(alignment: .leading, spacing: 8) {
+                            // App name and remove button
+                            HStack {
+                                Text(app.name)
+                                    .font(.headline)
+                                TextField("", text: Binding(
+                                    get: { app.customMessage ?? "Just Breathe" },
+                                    set: { app.customMessage = $0.isEmpty ? nil : $0 }
+                                ))
+                                .textFieldStyle(.roundedBorder)
+                                Button("Remove") {
+                                    settings.monitoredApps.removeAll { $0.id == app.id }
+                                }
+                                .buttonStyle(.borderless)
+                                .foregroundColor(.red)
+                            }
+
+                            // Delay slider
+                            HStack {
+                                Text("Delay:")
+                                    .frame(width: 80, alignment: .leading)
+                                    .font(.caption)
+                                Slider(value: $app.activationDelay, in: 0...30, step: 1)
+                                Text("\(Int(app.activationDelay))s")
+                                    .frame(width: 40, alignment: .trailing)
+                                    .monospacedDigit()
+                                    .font(.caption)
+                            }
+                        }
+                        .padding(.vertical, 4)
+                    }
+
+                    Button("Add App...") {
+                        showingAppPicker = true
+                    }
+                }
+            } header: {
+                Text("App Launch Activation")
+            } footer: {
+                if settings.appLaunchEnabled {
+                    Text("Pause will activate automatically when any of the listed apps are launched. Perfect for games or distracting apps.")
+                        .font(.caption)
+                } else {
+                    Text("When enabled, you can specify apps that will trigger a pause session when launched.")
+                        .font(.caption)
+                }
+            }
         }
         .formStyle(.grouped)
         .scrollContentBackground(.hidden)
+        .sheet(isPresented: $showingAppPicker) {
+            AppPickerView { app in
+                // Check if app is already in the list
+                if !settings.monitoredApps.contains(where: { $0.bundleIdentifier == app.bundleIdentifier }) {
+                    settings.monitoredApps.append(app)
+                }
+                showingAppPicker = false
+            }
+        }
+    }
+}
+
+// App Picker Sheet
+struct AppPickerView: View {
+    let onSelect: (MonitoredApp) -> Void
+    @Environment(\.dismiss) var dismiss
+
+    var body: some View {
+        VStack(spacing: 16) {
+            Text("Select an Application")
+                .font(.headline)
+
+            Text("Choose an app from your Applications folder")
+                .font(.caption)
+                .foregroundColor(.secondary)
+
+            Button("Choose from /Applications...") {
+                let panel = NSOpenPanel()
+                panel.canChooseFiles = true
+                panel.canChooseDirectories = false
+                panel.allowsMultipleSelection = false
+                panel.directoryURL = URL(fileURLWithPath: "/Applications")
+                panel.allowedContentTypes = [.application]
+
+                if panel.runModal() == .OK, let url = panel.url {
+                    if let bundle = Bundle(url: url),
+                       let bundleIdentifier = bundle.bundleIdentifier,
+                       let appName = bundle.infoDictionary?["CFBundleName"] as? String {
+                        let app = MonitoredApp(
+                            bundleIdentifier: bundleIdentifier,
+                            name: appName,
+                            iconPath: url.path
+                        )
+                        onSelect(app)
+                    }
+                }
+            }
+            .buttonStyle(.borderedProminent)
+
+            Button("Cancel") {
+                dismiss()
+            }
+            .buttonStyle(.bordered)
+        }
+        .padding(40)
+        .frame(width: 400, height: 200)
     }
 }

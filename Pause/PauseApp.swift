@@ -28,6 +28,9 @@ struct PauseApp: App {
 
         // Initialize Sparkle updater
         _ = SparkleUpdater.shared
+
+        // Initialize app launch monitor
+        _ = AppLaunchMonitor.shared
     }
 
     var body: some Scene {

@@ -9,6 +9,25 @@ import Foundation
 import Carbon.HIToolbox
 import ServiceManagement
 
+// Model for monitored apps that trigger activation
+struct MonitoredApp: Codable, Identifiable, Equatable {
+    let id: UUID
+    let bundleIdentifier: String
+    let name: String
+    let iconPath: String?
+    var activationDelay: TimeInterval  // Seconds to wait after app launch before triggering
+    var customMessage: String?  // Custom message to display, or nil for default
+
+    init(bundleIdentifier: String, name: String, iconPath: String? = nil, activationDelay: TimeInterval = 5.0, customMessage: String? = nil) {
+        self.id = UUID()
+        self.bundleIdentifier = bundleIdentifier
+        self.name = name
+        self.iconPath = iconPath
+        self.activationDelay = activationDelay
+        self.customMessage = customMessage
+    }
+}
+
 struct ScheduledTime: Codable, Identifiable, Equatable {
     var id: UUID
     var date: Date
@@ -223,6 +242,20 @@ class Settings: ObservableObject {
         }
     }
 
+    @Published var appLaunchEnabled: Bool {
+        didSet {
+            UserDefaults.standard.set(appLaunchEnabled, forKey: "appLaunchEnabled")
+        }
+    }
+
+    @Published var monitoredApps: [MonitoredApp] {
+        didSet {
+            if let encoded = try? JSONEncoder().encode(monitoredApps) {
+                UserDefaults.standard.set(encoded, forKey: "monitoredApps")
+            }
+        }
+    }
+
     // Methods for undo/redo
     func saveUndoState() {
         undoStack.append(scheduledTimes)
@@ -382,6 +415,15 @@ class Settings: ObservableObject {
             self.scheduledTimes = oldDates.map { ScheduledTime(date: $0) }
         } else {
             self.scheduledTimes = []
+        }
+
+        self.appLaunchEnabled = UserDefaults.standard.object(forKey: "appLaunchEnabled") as? Bool ?? false
+
+        if let data = UserDefaults.standard.data(forKey: "monitoredApps"),
+           let decoded = try? JSONDecoder().decode([MonitoredApp].self, from: data) {
+            self.monitoredApps = decoded
+        } else {
+            self.monitoredApps = []
         }
 
         self.recalculateOnActivation = UserDefaults.standard.object(forKey: "recalculateOnActivation") as? Bool ?? true
@@ -732,6 +774,8 @@ class Settings: ObservableObject {
         randomMaxInterval = 120
         scheduledEnabled = false
         scheduledTimes = []
+        appLaunchEnabled = false
+        monitoredApps = []
         recalculateOnActivation = true
 
         // No-go settings
