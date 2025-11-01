@@ -1,4 +1,8 @@
 <p align="center">
+  <img src="website/public/pause.png" alt="Pause Logo" width="200" style="border-radius: 50px;">
+</p>
+
+<p align="center">
   <h1 align="center">Pause</h1>
   <p align="center">
     A beautiful macOS meditation app for mindful breathing breaks throughout your day.

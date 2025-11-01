@@ -80,6 +80,7 @@ onUnmounted(() => {
     <!-- Main content (always rendered) -->
     <div class="content">
       <div class="container">
+        <img src="/pause.png" alt="Pause Logo" class="logo" />
         <h1 class="title">Pause</h1>
         <p class="tagline">Breathe. Reset. Stay Mindful.</p>
         <p class="description">
@@ -253,12 +254,21 @@ onUnmounted(() => {
   max-width: 800px;
 }
 
+.logo {
+  width: 200px;
+  height: 200px;
+  border-radius: 50px;
+  margin-bottom: 2rem;
+  animation: fadeInUp 0.8s ease-out;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
 .title {
   font-size: 6rem;
   font-weight: 700;
   margin-bottom: 1rem;
   letter-spacing: -0.02em;
-  animation: fadeInUp 0.8s ease-out;
+  animation: fadeInUp 0.8s ease-out 0.2s backwards;
   text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
 }
 
@@ -267,7 +277,7 @@ onUnmounted(() => {
   font-weight: 300;
   margin-bottom: 1.5rem;
   opacity: 0.95;
-  animation: fadeInUp 0.8s ease-out 0.2s backwards;
+  animation: fadeInUp 0.8s ease-out 0.4s backwards;
   text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.3);
 }
 
@@ -279,7 +289,7 @@ onUnmounted(() => {
   max-width: 600px;
   margin-left: auto;
   margin-right: auto;
-  animation: fadeInUp 0.8s ease-out 0.4s backwards;
+  animation: fadeInUp 0.8s ease-out 0.6s backwards;
   text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.3);
 }
 
@@ -294,7 +304,7 @@ onUnmounted(() => {
   cursor: pointer;
   transition: all 0.3s ease;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-  animation: fadeInUp 0.8s ease-out 0.6s backwards;
+  animation: fadeInUp 0.8s ease-out 0.8s backwards;
 }
 
 .cta-button:hover {
@@ -314,6 +324,11 @@ onUnmounted(() => {
 }
 
 @media (max-width: 768px) {
+  .logo {
+    width: 150px;
+    height: 150px;
+  }
+
   .title {
     font-size: 3.5rem;
   }
