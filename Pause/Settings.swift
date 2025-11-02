@@ -122,6 +122,12 @@ class Settings: ObservableObject {
         }
     }
 
+    @Published var doomScrollMessage: String {
+        didSet {
+            UserDefaults.standard.set(doomScrollMessage, forKey: "doomScrollMessage")
+        }
+    }
+
     @Published var pauseDuration: Int {
         didSet {
             UserDefaults.standard.set(pauseDuration, forKey: "pauseDuration")
@@ -411,10 +417,11 @@ class Settings: ObservableObject {
 
         // Load doom scroll detection settings
         self.doomScrollEnabled = UserDefaults.standard.object(forKey: "doomScrollEnabled") as? Bool ?? false
-        self.doomScrollVelocityThreshold = UserDefaults.standard.object(forKey: "doomScrollVelocityThreshold") as? Int ?? 40 // actions per minute
+        self.doomScrollVelocityThreshold = UserDefaults.standard.object(forKey: "doomScrollVelocityThreshold") as? Int ?? 3000 // events per minute (40 * 75)
         self.doomScrollDirectionalityThreshold = UserDefaults.standard.object(forKey: "doomScrollDirectionalityThreshold") as? Double ?? 0.85 // 85% forward
         self.doomScrollPauseThreshold = UserDefaults.standard.object(forKey: "doomScrollPauseThreshold") as? Double ?? 1.5 // 1.5 seconds median gap
         self.doomScrollWindowDuration = UserDefaults.standard.object(forKey: "doomScrollWindowDuration") as? Int ?? 3 // 3 minutes rolling window
+        self.doomScrollMessage = UserDefaults.standard.object(forKey: "doomScrollMessage") as? String ?? "Take a Break from Scrolling"
 
         self.pauseDuration = UserDefaults.standard.object(forKey: "pauseDuration") as? Int ?? 60
         self.pauseVariance = UserDefaults.standard.object(forKey: "pauseVariance") as? Int ?? 0
@@ -762,10 +769,11 @@ class Settings: ObservableObject {
 
         // Doom scroll detection settings
         doomScrollEnabled = false
-        doomScrollVelocityThreshold = 40
+        doomScrollVelocityThreshold = 3000
         doomScrollDirectionalityThreshold = 0.85
         doomScrollPauseThreshold = 1.5
         doomScrollWindowDuration = 3
+        doomScrollMessage = "Take a Break from Scrolling"
 
         // Session settings
         pauseDuration = 60

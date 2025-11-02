@@ -10,6 +10,7 @@ import SwiftUI
 struct ActivationSettingsTab: View {
     @ObservedObject var settings = Settings.shared
     @ObservedObject var detector = InputDetectionManager.shared
+    @ObservedObject var scrollDetector = DoomScrollDetector.shared
     @State private var showingAppPicker = false
 
     var body: some View {
@@ -288,6 +289,17 @@ struct ActivationSettingsTab: View {
             }
 
             if settings.doomScrollEnabled {
+                // Custom message
+                Section {
+                    TextField("Session Message", text: $settings.doomScrollMessage)
+                        .textFieldStyle(.roundedBorder)
+                } header: {
+                    Text("Session Message")
+                } footer: {
+                    Text("Message displayed during the pause session triggered by doom scrolling.")
+                        .font(.caption)
+                }
+
                 // Velocity threshold
                 Section {
                     HStack {
@@ -296,7 +308,7 @@ struct ActivationSettingsTab: View {
                         Slider(value: Binding(
                             get: { Double(settings.doomScrollVelocityThreshold) },
                             set: { settings.doomScrollVelocityThreshold = Int($0) }
-                        ), in: 10...100, step: 5)
+                        ), in: 500...7500, step: 250)
                         Text("\(settings.doomScrollVelocityThreshold)/min")
                             .frame(width: 70, alignment: .trailing)
                             .monospacedDigit()
@@ -304,7 +316,7 @@ struct ActivationSettingsTab: View {
                 } header: {
                     Text("High Velocity")
                 } footer: {
-                    Text("Minimum number of forward actions (scroll down, down arrow, right arrow) per minute. Current: \(settings.doomScrollVelocityThreshold) actions/min.")
+                    Text("Minimum number of forward scroll events per minute. One scroll action generates ~50-100 events. Current: \(settings.doomScrollVelocityThreshold) events/min.")
                         .font(.caption)
                 }
 
@@ -362,13 +374,80 @@ struct ActivationSettingsTab: View {
                         .font(.caption)
                 }
 
+                // Current Metrics (Live)
+                Section {
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack {
+                            Text("Events in Window:")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            Spacer()
+                            Text("\(scrollDetector.eventCount)")
+                                .font(.caption)
+                                .fontWeight(.semibold)
+                                .monospacedDigit()
+                        }
+
+                        HStack {
+                            Text("Current Velocity:")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            Spacer()
+                            Text("\(String(format: "%.1f", scrollDetector.currentVelocity))/min")
+                                .font(.caption)
+                                .fontWeight(.semibold)
+                                .monospacedDigit()
+                                .foregroundColor(scrollDetector.currentVelocity >= Double(settings.doomScrollVelocityThreshold) ? .green : .primary)
+                            Text("(need ≥\(settings.doomScrollVelocityThreshold))")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+
+                        HStack {
+                            Text("Current Directionality:")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            Spacer()
+                            Text("\(String(format: "%.0f", scrollDetector.currentDirectionality * 100))%")
+                                .font(.caption)
+                                .fontWeight(.semibold)
+                                .monospacedDigit()
+                                .foregroundColor(scrollDetector.currentDirectionality >= settings.doomScrollDirectionalityThreshold ? .green : .primary)
+                            Text("(need ≥\(Int(settings.doomScrollDirectionalityThreshold * 100))%)")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+
+                        HStack {
+                            Text("Current Median Pause:")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            Spacer()
+                            Text("\(scrollDetector.currentMedianPause == Double.infinity ? "∞" : String(format: "%.2f", scrollDetector.currentMedianPause))s")
+                                .font(.caption)
+                                .fontWeight(.semibold)
+                                .monospacedDigit()
+                                .foregroundColor(scrollDetector.currentMedianPause <= settings.doomScrollPauseThreshold && scrollDetector.currentMedianPause != Double.infinity ? .green : .primary)
+                            Text("(need ≤\(String(format: "%.1f", settings.doomScrollPauseThreshold))s)")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    .padding(.vertical, 4)
+                } header: {
+                    Text("Current Metrics (Live every 1s)")
+                } footer: {
+                    Text("Values update every 1 second. Green indicates threshold met. Check Console.app for detailed logs.")
+                        .font(.caption)
+                }
+
                 // Summary
                 Section {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Detection triggers when ALL conditions are met:")
                             .font(.caption)
                             .fontWeight(.semibold)
-                        Text("• Velocity ≥ \(settings.doomScrollVelocityThreshold) actions/min")
+                        Text("• Velocity ≥ \(settings.doomScrollVelocityThreshold) events/min")
                             .font(.caption)
                         Text("• Directionality ≥ \(Int(settings.doomScrollDirectionalityThreshold * 100))% forward")
                             .font(.caption)
@@ -377,7 +456,7 @@ struct ActivationSettingsTab: View {
                     }
                     .padding(.vertical, 4)
                 } header: {
-                    Text("Current Detection Criteria")
+                    Text("Detection Criteria")
                 }
             }
         }

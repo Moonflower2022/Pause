@@ -32,44 +32,83 @@ class DoomScrollDetector: ObservableObject {
 
     private let settings = Settings.shared
 
+    // Published metrics for display in settings
+    @Published var currentVelocity: Double = 0.0
+    @Published var currentDirectionality: Double = 0.0
+    @Published var currentMedianPause: Double = 0.0
+    @Published var eventCount: Int = 0
+
     private init() {
-        // Start periodic check timer (every 5 seconds)
-        Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { [weak self] _ in
-            self?.checkForDoomScrolling()
+        print("🎯 DoomScrollDetector: Initializing...")
+        // Start periodic check timer (every 1 second) on main runloop
+        DispatchQueue.main.async {
+            let timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+                self?.checkForDoomScrolling()
+            }
+            // Add to common run loop modes so it runs even when scrolling
+            RunLoop.main.add(timer, forMode: .common)
+            print("🎯 DoomScrollDetector: Timer scheduled on main runloop")
         }
+        print("🎯 DoomScrollDetector: Initialized with 5-second check timer")
     }
 
     // MARK: - Event Recording
 
     func recordScrollEvent(deltaY: Double) {
-        guard settings.doomScrollEnabled else { return }
+        guard settings.doomScrollEnabled else {
+            print("⚠️ Doom Scroll: Scroll event ignored - detection disabled in settings")
+            return
+        }
 
-        let type: ScrollEventType = deltaY > 0 ? .scrollDown : .scrollUp
+        // Ignore zero-delta events (momentum/noise)
+        guard abs(deltaY) > 0.1 else {
+            return
+        }
+
+        // In macOS with natural scrolling (default):
+        // - Swipe UP on trackpad (consuming more content going down) = NEGATIVE deltaY = scrollDown (forward)
+        // - Swipe DOWN on trackpad (going back up) = POSITIVE deltaY = scrollUp (backward)
+        let type: ScrollEventType = deltaY < 0 ? .scrollDown : .scrollUp
         let event = ScrollEvent(timestamp: Date(), type: type, delta: abs(deltaY))
 
         queueLock.lock()
         eventQueue.append(event)
+        let count = eventQueue.count
         queueLock.unlock()
+
+        if count <= 10 {
+            // Log first few events for debugging
+            print("📝 Doom Scroll Event #\(count): \(type == .scrollDown ? "↓" : "↑") scroll (delta: \(String(format: "%.1f", abs(deltaY))))")
+        }
 
         pruneOldEvents()
     }
 
     func recordKeyEvent(keyCode: UInt16) {
-        guard settings.doomScrollEnabled else { return }
+        guard settings.doomScrollEnabled else {
+            print("⚠️ Doom Scroll: Key event ignored - detection disabled in settings")
+            return
+        }
 
         let type: ScrollEventType?
+        let arrow: String
 
         switch keyCode {
         case 125: // Down arrow
             type = .keyDown
+            arrow = "↓"
         case 126: // Up arrow
             type = .keyUp
+            arrow = "↑"
         case 124: // Right arrow
             type = .keyRight
+            arrow = "→"
         case 123: // Left arrow
             type = .keyLeft
+            arrow = "←"
         default:
             type = nil
+            arrow = ""
         }
 
         guard let eventType = type else { return }
@@ -78,7 +117,11 @@ class DoomScrollDetector: ObservableObject {
 
         queueLock.lock()
         eventQueue.append(event)
+        let count = eventQueue.count
         queueLock.unlock()
+
+        // Log all key events for debugging
+        print("📝 Doom Scroll Event #\(count): \(arrow) key")
 
         pruneOldEvents()
     }
@@ -97,18 +140,57 @@ class DoomScrollDetector: ObservableObject {
     // MARK: - Detection Logic
 
     private func checkForDoomScrolling() {
-        guard settings.doomScrollEnabled else { return }
+        print("⏰ DoomScrollDetector: checkForDoomScrolling() called - enabled: \(settings.doomScrollEnabled)")
+
+        guard settings.doomScrollEnabled else {
+            // Reset metrics when disabled
+            DispatchQueue.main.async {
+                self.currentVelocity = 0.0
+                self.currentDirectionality = 0.0
+                self.currentMedianPause = 0.0
+                self.eventCount = 0
+            }
+            print("⏰ DoomScrollDetector: Detection disabled, skipping check")
+            return
+        }
 
         queueLock.lock()
         let events = eventQueue
+        let count = eventQueue.count
         queueLock.unlock()
 
-        guard !events.isEmpty else { return }
+        print("⏰ DoomScrollDetector: Event queue contains \(count) events")
+
+        // Update event count
+        DispatchQueue.main.async {
+            self.eventCount = count
+        }
+
+        guard !events.isEmpty else {
+            // Update with zero values if no events
+            DispatchQueue.main.async {
+                self.currentVelocity = 0.0
+                self.currentDirectionality = 0.0
+                self.currentMedianPause = 0.0
+            }
+            print("⏰ DoomScrollDetector: No events in queue, skipping metric calculation")
+            return
+        }
 
         // Calculate metrics
         let velocity = calculateVelocity(events: events)
         let directionality = calculateDirectionality(events: events)
         let medianPause = calculateMedianPause(events: events)
+
+        // Update published metrics
+        DispatchQueue.main.async {
+            self.currentVelocity = velocity
+            self.currentDirectionality = directionality
+            self.currentMedianPause = medianPause
+        }
+
+        // Log current values every check (helpful for debugging)
+        print("📊 Doom Scroll Metrics - Events: \(count), Velocity: \(String(format: "%.1f", velocity))/min (need ≥\(settings.doomScrollVelocityThreshold)), Directionality: \(String(format: "%.2f", directionality)) (need ≥\(String(format: "%.2f", settings.doomScrollDirectionalityThreshold))), Median pause: \(String(format: "%.2f", medianPause))s (need ≤\(String(format: "%.1f", settings.doomScrollPauseThreshold)))")
 
         // Check if all conditions are met
         let velocityMet = velocity >= Double(settings.doomScrollVelocityThreshold)
@@ -116,17 +198,26 @@ class DoomScrollDetector: ObservableObject {
         let pauseMet = medianPause <= settings.doomScrollPauseThreshold
 
         if velocityMet && directionalityMet && pauseMet {
-            // Doom scrolling detected! Trigger pause session
+            // Doom scrolling detected! Trigger pause session with custom message
+            let customMessage = settings.doomScrollMessage
             DispatchQueue.main.async {
-                AppState.shared.startPauseMode()
+                AppState.shared.startPauseMode(displayText: customMessage)
             }
 
-            // Clear the queue to avoid immediate re-triggering
+            // Clear the queue to avoid immediate re-triggering and reset metrics
             queueLock.lock()
             eventQueue.removeAll()
             queueLock.unlock()
 
-            print("🚨 Doom scrolling detected! Velocity: \(String(format: "%.1f", velocity))/min, Directionality: \(String(format: "%.2f", directionality)), Median pause: \(String(format: "%.2f", medianPause))s")
+            // Reset metrics immediately
+            DispatchQueue.main.async {
+                self.currentVelocity = 0.0
+                self.currentDirectionality = 0.0
+                self.currentMedianPause = 0.0
+                self.eventCount = 0
+            }
+
+            print("🚨 Doom scrolling detected! Velocity: \(String(format: "%.1f", velocity))/min, Directionality: \(String(format: "%.2f", directionality)), Median pause: \(String(format: "%.2f", medianPause))s - Starting session with message: '\(customMessage)'")
         }
     }
 
