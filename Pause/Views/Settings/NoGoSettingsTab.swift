@@ -23,10 +23,10 @@ struct NoGoSettingsTab: View {
                         Text("Minimum Buffer")
                             .frame(width: 140, alignment: .leading)
                         Slider(value: Binding(
-                            get: { Double(settings.inputDelayBuffer) },
-                            set: { settings.inputDelayBuffer = Int($0) }
-                        ), in: 10...300, step: 5)
-                        Text("\(settings.inputDelayBuffer)s")
+                            get: { SliderHelpers.indexForBuffer(settings.inputDelayBuffer) },
+                            set: { settings.inputDelayBuffer = SliderHelpers.bufferSteps()[Int($0)] }
+                        ), in: 0...Double(SliderHelpers.bufferSteps().count - 1), step: 1)
+                        Text(SliderHelpers.formatBuffer(settings.inputDelayBuffer))
                             .frame(width: 60, alignment: .trailing)
                             .monospacedDigit()
                     }
@@ -61,7 +61,7 @@ struct NoGoSettingsTab: View {
                 Text("Don't Interrupt")
             } footer: {
                 if settings.detectionEnabled {
-                    Text("When you type or click, scheduled activations closer than \(settings.inputDelayBuffer) seconds will be delayed. This prevents interruptions while actively working.")
+                    Text("When you type or click, scheduled activations closer than \(SliderHelpers.formatBuffer(settings.inputDelayBuffer)) will be delayed. This prevents interruptions while actively working.")
                         .font(.caption)
                 } else {
                     Text("When enabled, keyboard or mouse input will delay upcoming activations to prevent interruptions while you're working.")

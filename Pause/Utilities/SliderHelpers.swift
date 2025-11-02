@@ -26,6 +26,12 @@ struct SliderHelpers {
         return [0, 5, 10, 15, 30, 60, 120, 300, 600]
     }
 
+    // Buffer steps for input delay (in seconds)
+    // 1s, 2s, 5s, 10s, 15s, 30s, 1m, 1.5m, 2m, 3m, 5m
+    static func bufferSteps() -> [Int] {
+        return [1, 2, 5, 10, 15, 30, 60, 90, 120, 180, 300]
+    }
+
     // Find slider index for a given duration value
     static func indexForDuration(_ duration: Int) -> Double {
         let steps = durationSteps()
@@ -71,6 +77,21 @@ struct SliderHelpers {
         return Double(steps.count - 1)
     }
 
+    // Find slider index for a given buffer value
+    static func indexForBuffer(_ buffer: Int) -> Double {
+        let steps = bufferSteps()
+        if let index = steps.firstIndex(of: buffer) {
+            return Double(index)
+        }
+        // Find closest
+        for (index, step) in steps.enumerated() {
+            if buffer <= step {
+                return Double(index)
+            }
+        }
+        return Double(steps.count - 1)
+    }
+
     // Format duration in seconds to human-readable string
     static func formatDuration(_ seconds: Int) -> String {
         if seconds < 60 {
@@ -102,6 +123,21 @@ struct SliderHelpers {
                 return "\(hours)h"
             } else {
                 return "\(hours)h \(mins)m"
+            }
+        }
+    }
+
+    // Format buffer time in seconds to human-readable string
+    static func formatBuffer(_ seconds: Int) -> String {
+        if seconds < 60 {
+            return "\(seconds)s"
+        } else {
+            let mins = seconds / 60
+            let secs = seconds % 60
+            if secs == 0 {
+                return "\(mins)m"
+            } else {
+                return "\(mins)m \(secs)s"
             }
         }
     }
