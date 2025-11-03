@@ -40,6 +40,10 @@ class DoomScrollDetector: ObservableObject {
 
     private init() {
         print("🎯 DoomScrollDetector: Initializing...")
+
+        // Initialize with balanced event history to prevent false positives
+        initializeEventQueueWithBalancedHistory()
+
         // Start periodic check timer (every 1 second) on main runloop
         DispatchQueue.main.async {
             let timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
@@ -128,6 +132,39 @@ class DoomScrollDetector: ObservableObject {
 
     // MARK: - Event Management
 
+    /// Initialize event queue with ~200 balanced events to prevent false positives at startup
+    /// and after scroll-triggered activations. Half down, half up, low deltas, large pauses.
+    private func initializeEventQueueWithBalancedHistory() {
+        let eventCount = 200
+        let halfCount = eventCount / 2
+        let lowDelta = 2.0 // Low scroll delta
+        let largePause = 3.0 // 3 seconds between events
+
+        queueLock.lock()
+        eventQueue.removeAll()
+
+        // Create events starting from far in the past
+        let startTime = Date().addingTimeInterval(-Double(eventCount) * largePause)
+
+        // First half: scroll down events
+        for i in 0..<halfCount {
+            let timestamp = startTime.addingTimeInterval(Double(i * 2) * largePause)
+            let event = ScrollEvent(timestamp: timestamp, type: .scrollDown, delta: lowDelta)
+            eventQueue.append(event)
+        }
+
+        // Second half: scroll up events
+        for i in 0..<halfCount {
+            let timestamp = startTime.addingTimeInterval(Double(halfCount * 2 + i * 2) * largePause)
+            let event = ScrollEvent(timestamp: timestamp, type: .scrollUp, delta: lowDelta)
+            eventQueue.append(event)
+        }
+
+        queueLock.unlock()
+
+        print("🎯 DoomScrollDetector: Initialized event queue with \(eventCount) balanced events (low delta, large pauses)")
+    }
+
     private func pruneOldEvents() {
         let windowDuration = TimeInterval(settings.doomScrollWindowDuration * 60) // Convert minutes to seconds
         let cutoffTime = Date().addingTimeInterval(-windowDuration)
@@ -204,10 +241,8 @@ class DoomScrollDetector: ObservableObject {
                 AppState.shared.startPauseMode(displayText: customMessage)
             }
 
-            // Clear the queue to avoid immediate re-triggering and reset metrics
-            queueLock.lock()
-            eventQueue.removeAll()
-            queueLock.unlock()
+            // Reinitialize with balanced history to avoid immediate re-triggering
+            initializeEventQueueWithBalancedHistory()
 
             // Reset metrics immediately
             DispatchQueue.main.async {
