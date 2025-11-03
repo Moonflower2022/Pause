@@ -34,7 +34,8 @@ class AppState: NSObject, ObservableObject, AVAudioPlayerDelegate {
         "rain",
         "walking",
         "birds",
-        "waves"
+        "waves",
+        "chords"
     ]
 
     private override init() {
@@ -294,9 +295,16 @@ class AppState: NSObject, ObservableObject, AVAudioPlayerDelegate {
     }
 
     private func playRandomAmbientSound() {
-        // Select a random ambient sound only on first play (will be stored for the session)
-        guard let randomSound = ambientSounds.randomElement() else { return }
-        playAmbientSound(randomSound)
+        let selectedSound = Settings.shared.selectedAmbientSound
+
+        if selectedSound == "random" {
+            // Select a random ambient sound
+            guard let randomSound = ambientSounds.randomElement() else { return }
+            playAmbientSound(randomSound)
+        } else {
+            // Play the specifically selected sound
+            playAmbientSound(selectedSound)
+        }
     }
 
     private func playAmbientSound(_ soundName: String) {

@@ -158,6 +158,12 @@ class Settings: ObservableObject {
         }
     }
 
+    @Published var selectedAmbientSound: String {
+        didSet {
+            UserDefaults.standard.set(selectedAmbientSound, forKey: "selectedAmbientSound")
+        }
+    }
+
     @Published var startSoundEnabled: Bool {
         didSet {
             UserDefaults.standard.set(startSoundEnabled, forKey: "startSoundEnabled")
@@ -428,6 +434,7 @@ class Settings: ObservableObject {
         self.soundEnabled = UserDefaults.standard.object(forKey: "soundEnabled") as? Bool ?? true
         self.soundVolume = UserDefaults.standard.object(forKey: "soundVolume") as? Double ?? 0.5
         self.soundRepeatRate = UserDefaults.standard.object(forKey: "soundRepeatRate") as? Int ?? 0
+        self.selectedAmbientSound = UserDefaults.standard.object(forKey: "selectedAmbientSound") as? String ?? "random"
         self.startSoundEnabled = UserDefaults.standard.object(forKey: "startSoundEnabled") as? Bool ?? true
         self.startSoundVolume = UserDefaults.standard.object(forKey: "startSoundVolume") as? Double ?? 0.5
         self.endSoundEnabled = UserDefaults.standard.object(forKey: "endSoundEnabled") as? Bool ?? true
@@ -785,6 +792,7 @@ class Settings: ObservableObject {
         soundEnabled = true
         soundVolume = 0.5
         soundRepeatRate = 0
+        selectedAmbientSound = "random"
         startSoundEnabled = true
         startSoundVolume = 0.5
         endSoundEnabled = true
