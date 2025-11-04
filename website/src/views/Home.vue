@@ -3,7 +3,8 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
-const showIntro = ref(true)
+const hasVisited = localStorage.getItem('pauseHasVisited') === 'true'
+const showIntro = ref(!hasVisited)
 const textFadingOut = ref(false)
 const blackFadingOut = ref(false)
 const typedText = ref('')
@@ -65,6 +66,8 @@ const handleScroll = (e: WheelEvent | TouchEvent) => {
       // Remove intro after black fade completes (1s)
       setTimeout(() => {
         showIntro.value = false
+        // Mark as visited so they don't see intro again
+        localStorage.setItem('pauseHasVisited', 'true')
       }, 1000)
     }, 1000)
   }
@@ -81,22 +84,27 @@ const rotateHighlight = () => {
 }
 
 onMounted(() => {
-  // Start typing after a brief delay
-  setTimeout(() => {
-    typeText()
-  }, 500)
+  // Only show intro animation if first visit
+  if (!hasVisited) {
+    // Start typing after a brief delay
+    setTimeout(() => {
+      typeText()
+    }, 500)
 
-  // Add scroll listener with passive: false to allow preventDefault
-  window.addEventListener('wheel', handleScroll as EventListener, { passive: false })
-  window.addEventListener('touchmove', handleScroll as EventListener, { passive: false })
+    // Add scroll listener with passive: false to allow preventDefault
+    window.addEventListener('wheel', handleScroll as EventListener, { passive: false })
+    window.addEventListener('touchmove', handleScroll as EventListener, { passive: false })
+  }
 
   // Start highlight rotation
   rotateHighlight()
 })
 
 onUnmounted(() => {
-  window.removeEventListener('wheel', handleScroll as EventListener)
-  window.removeEventListener('touchmove', handleScroll as EventListener)
+  if (!hasVisited) {
+    window.removeEventListener('wheel', handleScroll as EventListener)
+    window.removeEventListener('touchmove', handleScroll as EventListener)
+  }
 })
 </script>
 
