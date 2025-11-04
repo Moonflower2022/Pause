@@ -105,7 +105,9 @@ const goHome = () => {
       <div class="info-box">
         <h2 class="info-title">What to Expect</h2>
         <ul class="info-list">
+          <li>tbh just try it out lol whats the worst that can happen</li>
           <li>Early access to Pause when it launches</li>
+          <li>It will launch in like two days (gosh darn apple notary system)</li>
           <li>macOS 13.0 (Ventura) or later required</li>
         </ul>
       </div>
