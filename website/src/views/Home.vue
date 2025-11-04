@@ -6,18 +6,30 @@ const router = useRouter()
 const showIntro = ref(true)
 const textFadingOut = ref(false)
 const blackFadingOut = ref(false)
-const showContent = ref(false)
 const typedText = ref('')
 const typingComplete = ref(false)
 const showScrollHint = ref(false)
+const highlightedIndex = ref(0)
 
-const fullText = `When was the last time you actually stopped?
+const fullText = `Your brain needs breaks.
 
-No notifications. No tabs. No distractions.
+Your body needs breaks.
 
-Just you. Just now.
+Your work needs breaks.
 
-You never pause.`
+But you never pause.`
+
+const allBenefitPoints = [
+  'Brain processes work during rest',
+  'Return with fresh insights',
+  'Avoid mental tunneling',
+  'Reduce eye strain',
+  'Improve posture',
+  'Better sleep quality',
+  'Stay aware of time',
+  'Build healthy habits',
+  'Never miss meetings'
+]
 
 const goToInstall = () => {
   router.push('/install')
@@ -42,7 +54,7 @@ const typeText = () => {
   }, typingSpeed)
 }
 
-const handleScroll = (e: Event) => {
+const handleScroll = (e: WheelEvent | TouchEvent) => {
   if (typingComplete.value && !textFadingOut.value) {
     e.preventDefault()
     // Stage 1: Fade out text (1s)
@@ -58,20 +70,33 @@ const handleScroll = (e: Event) => {
   }
 }
 
+const rotateHighlight = () => {
+  setInterval(() => {
+    let newIndex
+    do {
+      newIndex = Math.floor(Math.random() * allBenefitPoints.length)
+    } while (newIndex === highlightedIndex.value)
+    highlightedIndex.value = newIndex
+  }, 3000)
+}
+
 onMounted(() => {
   // Start typing after a brief delay
   setTimeout(() => {
     typeText()
   }, 500)
 
-  // Add scroll listener
-  window.addEventListener('wheel', handleScroll)
-  window.addEventListener('touchmove', handleScroll)
+  // Add scroll listener with passive: false to allow preventDefault
+  window.addEventListener('wheel', handleScroll as EventListener, { passive: false })
+  window.addEventListener('touchmove', handleScroll as EventListener, { passive: false })
+
+  // Start highlight rotation
+  rotateHighlight()
 })
 
 onUnmounted(() => {
-  window.removeEventListener('wheel', handleScroll)
-  window.removeEventListener('touchmove', handleScroll)
+  window.removeEventListener('wheel', handleScroll as EventListener)
+  window.removeEventListener('touchmove', handleScroll as EventListener)
 })
 </script>
 
@@ -80,13 +105,119 @@ onUnmounted(() => {
     <!-- Main content (always rendered) -->
     <div class="content">
       <div class="container">
-        <img src="/pause.png" alt="Pause Logo" class="logo" />
-        <h1 class="title">Pause</h1>
-        <p class="tagline">Breathe. Reset. Stay Mindful.</p>
-        <p class="description">
-          A meditation app for macOS that helps you take regular breathing breaks throughout your day.
-        </p>
-        <button @click="goToInstall" class="cta-button">Get Started</button>
+        <div class="main-layout">
+          <!-- Left Column: Why Breaks -->
+          <div class="left-column">
+            <div class="title">Why breaks?</div>
+            <div class="benefit-card">
+              <div class="benefit-label">🧠 Productivity</div>
+              <div class="benefit-list">
+                <div class="benefit-point" :class="{ 'highlighted': highlightedIndex === 0 }">Brain processes work during rest</div>
+                <div class="benefit-point" :class="{ 'highlighted': highlightedIndex === 1 }">Return with fresh insights</div>
+                <div class="benefit-point" :class="{ 'highlighted': highlightedIndex === 2 }">Avoid mental tunneling</div>
+              </div>
+            </div>
+            <div class="benefit-card">
+              <div class="benefit-label">💪 Health</div>
+              <div class="benefit-list">
+                <div class="benefit-point" :class="{ 'highlighted': highlightedIndex === 3 }">Reduce eye strain</div>
+                <div class="benefit-point" :class="{ 'highlighted': highlightedIndex === 4 }">Improve posture</div>
+                <div class="benefit-point" :class="{ 'highlighted': highlightedIndex === 5 }">Better sleep quality</div>
+              </div>
+            </div>
+            <div class="benefit-card">
+              <div class="benefit-label">🎯 Awareness</div>
+              <div class="benefit-list">
+                <div class="benefit-point" :class="{ 'highlighted': highlightedIndex === 6 }">Stay aware of time</div>
+                <div class="benefit-point" :class="{ 'highlighted': highlightedIndex === 7 }">Build healthy habits</div>
+                <div class="benefit-point" :class="{ 'highlighted': highlightedIndex === 8 }">Never miss meetings</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Center: Branding -->
+          <div class="center-column">
+            <!-- Top Video -->
+            <div class="center-video">
+              <div class="center-video-title">Launch Video!</div>
+              <div class="center-video-wrapper">
+                <iframe
+                  src="https://www.youtube.com/embed/Pvcd4aqd_L8"
+                  title="Pause Launch Video"
+                  frameborder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowfullscreen
+                ></iframe>
+              </div>
+            </div>
+
+            <div class="logo-container">
+              <img src="/pause.png" alt="Pause Logo" class="logo" @click="goToInstall" />
+              <div class="waitlist-pointer">
+                <div class="arrow">↑</div>
+                <div class="pointer-text">click me!</div>
+              </div>
+            </div>
+            <h1 class="title">Pause</h1>
+            <p class="tagline">Firmly enforces breaks. Customizable and smart.</p>
+            <div class="center-badges">
+              <span class="badge">Open Source</span>
+              <span class="badge">macOS Native</span>
+              <span class="badge">Private</span>
+            </div>
+
+            <!-- Bottom Video -->
+            <div class="center-video">
+              <div class="center-video-title">Quick Pitch and Demo (slightly outdated)</div>
+              <div class="center-video-wrapper">
+                <iframe
+                  src="https://www.youtube.com/embed/O2XzWBNgfM4"
+                  title="Pause Quick Pitch and Demo"
+                  frameborder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowfullscreen
+                ></iframe>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Column: App Features -->
+          <div class="right-column">
+            <div class="title">Why Pause?</div>
+            <div class="why-item">
+              <div class="why-title">Can Lock</div>
+              <div class="why-quotes">
+                <div class="quote">"can you make it so that I can't just skip it"</div>
+                <div class="quote">"but only sometimes :)"</div>
+              </div>
+            </div>
+            <div class="why-item">
+              <div class="why-title">Smart Activations</div>
+              <div class="why-quotes">
+                <div class="quote">"activate every 15m"</div>
+                <div class="quote">"activate everytime I launch minecraft"</div>
+                <div class="quote">"activate when I'm scrolling"</div>
+                <div class="quote">"activate before my 6pm meeting"</div>
+              </div>
+            </div>
+            <div class="why-item">
+              <div class="why-title">Smart Anti-activations</div>
+              <div class="why-quotes">
+                <div class="quote">"dont activate during my 6pm meeting"</div>
+                <div class="quote">"dont activate while im typing"</div>
+              </div>
+            </div>
+            <div class="why-item">
+              <div class="why-title">Customizability</div>
+              <div class="why-quotes">
+                <div class="quote">"make it tell me to stretch"</div>
+                <div class="quote">"play the nice forest sounds"</div>
+                <div class="quote">"can i activate it with just cmd + p?"</div>
+                <div class="quote">"dont activate during my meeting"</div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -108,6 +239,28 @@ onUnmounted(() => {
   overflow: hidden;
   position: relative;
 }
+
+/* Center Badges */
+.center-badges {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 1.25rem;
+  margin-bottom: 0.25rem;
+}
+
+.badge {
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+}
+
 
 /* Intro screen - black with white text */
 .intro-screen {
@@ -176,7 +329,7 @@ onUnmounted(() => {
   color: rgba(255, 255, 255, 0.5);
   font-size: 1rem;
   font-weight: 300;
-  animation: fadeInHint 1s ease-out, bounce 2s ease-in-out infinite;
+  animation: fadeInHint 1s ease-out, bounceVertical 2s ease-in-out infinite;
 }
 
 @keyframes fadeInHint {
@@ -188,7 +341,7 @@ onUnmounted(() => {
   }
 }
 
-@keyframes bounce {
+@keyframes bounceVertical {
   0%, 100% {
     transform: translateX(-50%) translateY(0);
   }
@@ -197,27 +350,9 @@ onUnmounted(() => {
   }
 }
 
-@keyframes fadeInText {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes fadeOut {
-  to {
-    opacity: 0;
-    visibility: hidden;
-  }
-}
-
 /* Main content */
 .content {
-  height: 100vh;
+  min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -225,6 +360,7 @@ onUnmounted(() => {
   background-size: 400% 400%;
   animation: gradientShift 15s ease infinite, fadeIn 1s ease-out;
   color: white;
+  padding: 4rem 2rem;
 }
 
 @keyframes fadeIn {
@@ -250,66 +386,258 @@ onUnmounted(() => {
 
 .container {
   text-align: center;
-  padding: 2rem;
-  max-width: 800px;
+  max-width: 1300px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 3rem;
+}
+
+/* Center Column Videos */
+.center-video {
+  width: 100%;
+  margin-bottom: 1.5rem;
+}
+
+.center-video:last-of-type {
+  margin-top: 2rem;
+  margin-bottom: 0;
+}
+
+.center-video-title {
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-bottom: 0.75rem;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
+  opacity: 0.95;
+}
+
+.center-video-wrapper {
+  position: relative;
+  width: 100%;
+  padding-bottom: 56.25%; /* 16:9 aspect ratio */
+  height: 0;
+  overflow: hidden;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.center-video-wrapper iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+}
+
+/* Main Three Column Layout */
+.main-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 2.5rem;
+  align-items: start;
+  animation: fadeInUp 0.8s ease-out;
+}
+
+/* Left Column - Benefits */
+.left-column {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  text-align: left;
+}
+
+/* Center Column - Branding */
+.center-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 1rem;
+  align-self: center;
+}
+
+.logo-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.25rem;
 }
 
 .logo {
-  width: 200px;
-  height: 200px;
-  border-radius: 50px;
-  margin-bottom: 2rem;
-  animation: fadeInUp 0.8s ease-out;
+  width: 120px;
+  height: 120px;
+  border-radius: 30px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.logo:hover {
+  transform: scale(1.05);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.waitlist-pointer {
+  position: absolute;
+  right: -110px;
+  top: 50%;
+  transform: translateY(-50%);
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.arrow {
+  font-size: 2rem;
+  animation: bounce 2s ease-in-out infinite;
+  opacity: 0.9;
+  transform: rotate(-90deg);
+}
+
+.pointer-text {
+  font-size: 1rem;
+  font-weight: 500;
+  opacity: 0.95;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
+  white-space: nowrap;
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: rotate(-90deg) translateX(0);
+  }
+  50% {
+    transform: rotate(-90deg) translateX(-5px);
+  }
 }
 
 .title {
-  font-size: 6rem;
+  font-size: 3.5rem;
   font-weight: 700;
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
   letter-spacing: -0.02em;
-  animation: fadeInUp 0.8s ease-out 0.2s backwards;
   text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .tagline {
-  font-size: 2rem;
-  font-weight: 300;
-  margin-bottom: 1.5rem;
+  font-size: 1.15rem;
+  font-weight: 400;
   opacity: 0.95;
-  animation: fadeInUp 0.8s ease-out 0.4s backwards;
   text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.3);
+  text-align: center;
+  line-height: 1.5;
 }
 
-.description {
-  font-size: 1.25rem;
-  margin-bottom: 3rem;
-  opacity: 0.9;
-  line-height: 1.7;
-  max-width: 600px;
-  margin-left: auto;
-  margin-right: auto;
-  animation: fadeInUp 0.8s ease-out 0.6s backwards;
-  text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.3);
+/* Right Column - Features */
+.right-column {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  text-align: left;
 }
 
-.cta-button {
-  background: white;
-  color: rgb(151, 187, 101);
-  padding: 1.25rem 3rem;
-  font-size: 1.25rem;
-  font-weight: 600;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
+.benefit-card {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  padding: 1.5rem 1.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
   transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-  animation: fadeInUp 0.8s ease-out 0.8s backwards;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  height: 100%;
 }
 
-.cta-button:hover {
+.benefit-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+  background: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.benefit-icon {
+  font-size: 2.5rem;
+}
+
+.benefit-label {
+  font-size: 1.1rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.95;
+  margin-bottom: 0.25rem;
+}
+
+.benefit-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.benefit-point {
+  font-size: 1.05rem;
+  opacity: 0.85;
+  line-height: 1.5;
+  text-align: left;
+  padding: 0.4rem 0.5rem;
+  position: relative;
+  transition: all 0.4s ease;
+  border-radius: 6px;
+}
+
+.benefit-point.highlighted {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.25);
+  font-weight: 500;
+  transform: translateX(4px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 0.6rem 0.75rem;
+  margin: 0.25rem 0;
+}
+
+/* Why Items (App Features) */
+.why-item {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  border-radius: 10px;
+  padding: 1.5rem 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.why-item:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.why-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin-bottom: 0.85rem;
+  letter-spacing: -0.01em;
+}
+
+.why-quotes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.quote {
+  font-size: 0.95rem;
+  line-height: 1.5;
+  opacity: 0.9;
+  font-style: italic;
+  padding-left: 0.5rem;
 }
 
 @keyframes fadeInUp {
@@ -323,27 +651,131 @@ onUnmounted(() => {
   }
 }
 
+/* Responsive Design */
 @media (max-width: 768px) {
-  .logo {
-    width: 150px;
-    height: 150px;
+  .center-video-title {
+    font-size: 0.85rem;
+    margin-bottom: 0.6rem;
   }
 
-  .title {
-    font-size: 3.5rem;
+  .center-video-wrapper {
+    border-radius: 6px;
   }
 
-  .tagline {
+  .waitlist-pointer {
+    position: static;
+    transform: none;
+    margin-top: 0.75rem;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .arrow {
+    transform: rotate(0deg);
     font-size: 1.5rem;
   }
 
-  .description {
+  @keyframes bounce {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-5px);
+    }
+  }
+
+  .pointer-text {
+    font-size: 0.9rem;
+  }
+
+  .logo-container {
+    flex-direction: column;
+  }
+
+  /* Stack vertically on mobile */
+  .main-layout {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .center-column {
+    order: -1;
+    padding: 0;
+    align-self: auto;
+  }
+
+  .left-column,
+  .right-column {
+    text-align: center;
+  }
+
+  .logo {
+    width: 100px;
+    height: 100px;
+    margin-bottom: 1rem;
+  }
+
+  .title {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .tagline {
     font-size: 1.1rem;
   }
 
-  .cta-button {
-    font-size: 1.1rem;
-    padding: 1rem 2rem;
+  .benefit-card {
+    padding: 1.25rem 1rem;
+    height: auto;
+  }
+
+  .benefit-point {
+    font-size: 0.95rem;
+    padding: 0.35rem 0.5rem;
+  }
+
+  .benefit-point.highlighted {
+    padding: 0.5rem 0.65rem;
+    margin: 0.2rem 0;
+  }
+
+  .why-item {
+    padding: 1.25rem 1.25rem;
+    height: auto;
+  }
+
+  .why-title {
+    font-size: 1.15rem;
+    margin-bottom: 0.7rem;
+  }
+
+  .quote {
+    font-size: 0.875rem;
+  }
+
+  .center-badges {
+    margin-top: 1rem;
+    margin-bottom: 0.25rem;
+    gap: 0.5rem;
+  }
+
+  .badge {
+    font-size: 0.8rem;
+    padding: 0.45rem 0.85rem;
+  }
+
+  .cta-button-center {
+    margin-top: 0.85rem;
+    padding: 0.9rem 2rem;
+    font-size: 1.05rem;
+  }
+
+  .container {
+    gap: 1.5rem;
+  }
+
+  .content {
+    padding: 3rem 1rem;
   }
 }
 </style>

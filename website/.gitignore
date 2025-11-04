@@ -13,6 +13,8 @@ dist
 dist-ssr
 coverage
 *.local
+.env
+.env.local
 
 # Editor directories and files
 .vscode/*
@@ -34,3 +36,5 @@ coverage
 
 # Vitest
 __screenshots__/
+
+.env

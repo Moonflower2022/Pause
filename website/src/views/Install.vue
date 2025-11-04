@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { supabase } from '../lib/supabase'
 
 const router = useRouter()
 const email = ref('')
 const isEmailSubmitted = ref(false)
 const emailError = ref('')
 const emailInput = ref<HTMLInputElement | null>(null)
+const isSubmitting = ref(false)
 
 onMounted(() => {
   // Autofocus the email input when component mounts
@@ -20,7 +22,7 @@ const validateEmail = (email: string): boolean => {
   return re.test(email)
 }
 
-const handleDownload = () => {
+const handleWaitlist = async () => {
   emailError.value = ''
 
   if (!email.value.trim()) {
@@ -33,15 +35,31 @@ const handleDownload = () => {
     return
   }
 
-  isEmailSubmitted.value = true
+  isSubmitting.value = true
 
-  // Here you would normally send the email to your backend
-  console.log('Email submitted:', email.value)
+  try {
+    const { error } = await supabase
+      .from('waitlist')
+      .insert([{ email: email.value.trim().toLowerCase() }])
 
-  // Trigger download
-  setTimeout(() => {
-    window.location.href = 'https://github.com/yourusername/Pause/releases/latest/download/Pause.dmg'
-  }, 500)
+    if (error) {
+      if (error.code === '23505') {
+        // Duplicate email
+        emailError.value = 'This email is already on the waitlist!'
+      } else {
+        emailError.value = 'Something went wrong. Please try again.'
+        console.error('Supabase error:', error)
+      }
+      isSubmitting.value = false
+      return
+    }
+
+    isEmailSubmitted.value = true
+  } catch (err) {
+    emailError.value = 'Something went wrong. Please try again.'
+    console.error('Error:', err)
+    isSubmitting.value = false
+  }
 }
 
 const goHome = () => {
@@ -54,10 +72,10 @@ const goHome = () => {
     <button @click="goHome" class="back-button">← Back</button>
 
     <div class="container">
-      <h1 class="title">Install Pause</h1>
+      <h1 class="title">Join the Waitlist</h1>
 
       <div v-if="!isEmailSubmitted" class="download-section">
-        <p class="subtitle">Enter your email to download Pause for macOS</p>
+        <p class="subtitle">Be the first to know when Pause launches</p>
 
         <div class="email-form">
           <input
@@ -67,34 +85,29 @@ const goHome = () => {
             placeholder="your@email.com"
             class="email-input"
             :class="{ error: emailError }"
-            @keyup.enter="handleDownload"
+            @keyup.enter="handleWaitlist"
           />
-          <button @click="handleDownload" class="download-button">Download</button>
+          <button @click="handleWaitlist" class="download-button" :disabled="isSubmitting">
+            {{ isSubmitting ? 'Joining...' : 'Join Waitlist' }}
+          </button>
         </div>
 
         <p v-if="emailError" class="error-message">{{ emailError }}</p>
 
-        <p class="privacy-note">We'll only use your email for important updates about Pause.</p>
+        <p class="privacy-note">We'll only use your email to notify you when Pause launches.</p>
       </div>
 
       <div v-else class="success-section">
         <div class="success-icon">✓</div>
-        <p class="success-message">Your download should start automatically...</p>
+        <p class="success-message">You're on the list! We'll email you when Pause launches.</p>
       </div>
 
-      <div class="instructions">
-        <h2 class="instructions-title">Installation Steps</h2>
-        <ol class="steps-list">
-          <li>Download the Pause.dmg file</li>
-          <li>Open the downloaded file and drag Pause.app to your Applications folder</li>
-          <li>Launch Pause from Applications</li>
-          <li>Grant accessibility permissions when prompted</li>
-          <li>Configure your preferences and start your mindfulness journey</li>
-        </ol>
-      </div>
-
-      <div class="requirements">
-        <p><strong>System Requirements:</strong> macOS 13.0 (Ventura) or later</p>
+      <div class="info-box">
+        <h2 class="info-title">What to Expect</h2>
+        <ul class="info-list">
+          <li>Early access to Pause when it launches</li>
+          <li>macOS 13.0 (Ventura) or later required</li>
+        </ul>
       </div>
     </div>
   </div>
@@ -208,9 +221,14 @@ const goHome = () => {
   white-space: nowrap;
 }
 
-.download-button:hover {
+.download-button:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+.download-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .error-message {
@@ -241,7 +259,7 @@ const goHome = () => {
   animation: fadeIn 0.5s ease-out 0.2s backwards;
 }
 
-.instructions {
+.info-box {
   background: rgba(255, 255, 255, 0.15);
   padding: 2rem;
   border-radius: 12px;
@@ -249,28 +267,34 @@ const goHome = () => {
   backdrop-filter: blur(10px);
 }
 
-.instructions-title {
+.info-title {
   font-size: 1.75rem;
   margin-bottom: 1.5rem;
   font-weight: 600;
   text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.2);
 }
 
-.steps-list {
+.info-list {
   text-align: left;
   max-width: 500px;
   margin: 0 auto;
   line-height: 2;
   font-size: 1.05rem;
+  list-style-type: none;
+  padding-left: 0;
 }
 
-.steps-list li {
+.info-list li {
   margin-bottom: 0.75rem;
+  padding-left: 1.5rem;
+  position: relative;
 }
 
-.requirements {
-  font-size: 0.95rem;
-  opacity: 0.9;
+.info-list li::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  font-weight: bold;
 }
 
 @keyframes scaleIn {
@@ -326,13 +350,12 @@ const goHome = () => {
     font-size: 0.9rem;
   }
 
-  .instructions {
+  .info-box {
     padding: 1.5rem;
   }
 
-  .steps-list {
+  .info-list {
     font-size: 1rem;
-    padding-left: 1.5rem;
   }
 }
 </style>

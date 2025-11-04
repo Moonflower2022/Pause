@@ -18,6 +18,8 @@
     "format": "prettier --write src/"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.78.0",
+    "tslib": "^2.8.1",
     "vue": "^3.5.22",
     "vue-router": "^4.6.3"
   },
