@@ -266,7 +266,7 @@ onUnmounted(() => {
   border-radius: 20px;
   font-size: 0.85rem;
   font-weight: 500;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+  color: black;
 }
 
 
@@ -416,7 +416,7 @@ onUnmounted(() => {
   font-size: 0.9rem;
   font-weight: 500;
   margin-bottom: 0.75rem;
-  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
+  color: black;
   opacity: 0.95;
 }
 
@@ -510,7 +510,7 @@ onUnmounted(() => {
   font-size: 1rem;
   font-weight: 500;
   opacity: 0.95;
-  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
+  color: black;
   white-space: nowrap;
 }
 
@@ -528,14 +528,14 @@ onUnmounted(() => {
   font-weight: 700;
   margin-bottom: 0.75rem;
   letter-spacing: -0.02em;
-  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
+  color: black;
 }
 
 .tagline {
   font-size: 1.15rem;
   font-weight: 400;
   opacity: 0.95;
-  text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.3);
+  color: black;
   text-align: center;
   line-height: 1.5;
 }
@@ -578,6 +578,7 @@ onUnmounted(() => {
   letter-spacing: 0.05em;
   opacity: 0.95;
   margin-bottom: 0.25rem;
+  color: black;
 }
 
 .benefit-list {
@@ -595,6 +596,7 @@ onUnmounted(() => {
   position: relative;
   transition: all 0.4s ease;
   border-radius: 6px;
+  color: black;
 }
 
 .benefit-point.highlighted {
@@ -614,7 +616,7 @@ onUnmounted(() => {
   border-radius: 10px;
   padding: 1.5rem 1.5rem;
   border: 1px solid rgba(255, 255, 255, 0.2);
-  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
+  color: black;
   transition: all 0.3s ease;
   height: 100%;
   display: flex;
@@ -632,6 +634,7 @@ onUnmounted(() => {
   font-weight: 700;
   margin-bottom: 0.85rem;
   letter-spacing: -0.01em;
+  color: black;
 }
 
 .why-quotes {
@@ -646,6 +649,7 @@ onUnmounted(() => {
   opacity: 0.9;
   font-style: italic;
   padding-left: 0.5rem;
+  color: black;
 }
 
 @keyframes fadeInUp {

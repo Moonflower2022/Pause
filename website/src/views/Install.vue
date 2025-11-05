@@ -9,6 +9,7 @@ const isEmailSubmitted = ref(false)
 const emailError = ref('')
 const emailInput = ref<HTMLInputElement | null>(null)
 const isSubmitting = ref(false)
+const showInstallPopup = ref(false)
 
 onMounted(() => {
   // Autofocus the email input when component mounts
@@ -44,22 +45,45 @@ const handleWaitlist = async () => {
 
     if (error) {
       if (error.code === '23505') {
-        // Duplicate email
-        emailError.value = 'This email is already on the waitlist!'
+        // Duplicate email - still allow download
+        startDownload()
+        isEmailSubmitted.value = true
+        isSubmitting.value = false
+        return
       } else {
         emailError.value = 'Something went wrong. Please try again.'
         console.error('Supabase error:', error)
+        isSubmitting.value = false
+        return
       }
-      isSubmitting.value = false
-      return
     }
 
+    // Start download
+    startDownload()
     isEmailSubmitted.value = true
   } catch (err) {
     emailError.value = 'Something went wrong. Please try again.'
     console.error('Error:', err)
     isSubmitting.value = false
   }
+}
+
+const startDownload = () => {
+  const link = document.createElement('a')
+  link.href = '/Pause.zip'
+  link.download = 'Pause.zip'
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+
+  // Show installation instructions popup
+  setTimeout(() => {
+    showInstallPopup.value = true
+  }, 500)
+}
+
+const closePopup = () => {
+  showInstallPopup.value = false
 }
 
 const goHome = () => {
@@ -72,10 +96,10 @@ const goHome = () => {
     <button @click="goHome" class="back-button">← Back</button>
 
     <div class="container">
-      <h1 class="title">Join the Waitlist</h1>
+      <h1 class="title">Get Pause</h1>
 
       <div v-if="!isEmailSubmitted" class="download-section">
-        <p class="subtitle">Be the first to know when Pause launches</p>
+        <p class="subtitle">Enter your email to download Pause</p>
 
         <div class="email-form">
           <input
@@ -88,28 +112,47 @@ const goHome = () => {
             @keyup.enter="handleWaitlist"
           />
           <button @click="handleWaitlist" class="download-button" :disabled="isSubmitting">
-            {{ isSubmitting ? 'Joining...' : 'Join Waitlist' }}
+            {{ isSubmitting ? 'Downloading...' : 'Download' }}
           </button>
         </div>
 
         <p v-if="emailError" class="error-message">{{ emailError }}</p>
 
-        <p class="privacy-note">We'll only use your email to notify you when Pause launches.</p>
+        <p class="privacy-note">We'll only use your email for occasional updates about Pause.</p>
       </div>
 
       <div v-else class="success-section">
         <div class="success-icon">✓</div>
-        <p class="success-message">You're on the list! We'll email you when Pause launches.</p>
+        <p class="success-message">Download started! Check your Downloads folder.</p>
       </div>
 
       <div class="info-box">
-        <h2 class="info-title">What to Expect</h2>
+        <h2 class="info-title">What You'll Get</h2>
         <ul class="info-list">
-          <li>tbh just try it out lol whats the worst that can happen</li>
-          <li>Early access to Pause when it launches</li>
-          <li>It will launch in like two days (gosh darn apple notary system)</li>
-          <li>macOS 13.0 (Ventura) or later required</li>
+          <li>Pause.app for macOS (Ventura 13.0+)</li>
+          <li>Installation instructions</li>
+          <li>Free forever, no subscriptions</li>
+          <li>Open source and privacy-focused</li>
         </ul>
+      </div>
+    </div>
+
+    <!-- Installation Instructions Popup -->
+    <div v-if="showInstallPopup" class="popup-overlay" @click="closePopup">
+      <div class="popup-content" @click.stop>
+        <button class="close-button" @click="closePopup">×</button>
+        <h2 class="popup-title">Installation Instructions</h2>
+        <div class="downloads-guide">
+          <p>Go to your downloads folder:</p>
+          <img src="/downloads.png" alt="How to access Downloads folder" class="downloads-image" />
+        </div>
+        <ol class="install-steps">
+          <li>Unzip the downloaded file</li>
+          <li>Drag <strong>Pause.app</strong> to your <strong>Applications</strong> folder</li>
+          <li>Launch Pause using Spotlight (⌘ + Space, then type "Pause")</li>
+          <li>Grant accessibility permissions when prompted for global hotkey</li>
+        </ol>
+        <button @click="closePopup" class="got-it-button">Got it!</button>
       </div>
     </div>
   </div>
@@ -137,8 +180,8 @@ const goHome = () => {
   top: 2rem;
   left: 2rem;
   background: rgba(255, 255, 255, 0.2);
-  color: white;
-  border: 2px solid white;
+  color: black;
+  border: 2px solid black;
   padding: 0.75rem 1.5rem;
   border-radius: 8px;
   font-size: 1rem;
@@ -163,14 +206,14 @@ const goHome = () => {
   font-weight: 700;
   margin-bottom: 2rem;
   letter-spacing: -0.02em;
-  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
+  color: black;
 }
 
 .subtitle {
   font-size: 1.25rem;
   margin-bottom: 2rem;
   opacity: 0.95;
-  text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.3);
+  color: black;
 }
 
 .download-section {
@@ -244,6 +287,7 @@ const goHome = () => {
   font-size: 0.9rem;
   opacity: 0.8;
   margin-top: 1rem;
+  color: black;
 }
 
 .success-section {
@@ -259,6 +303,7 @@ const goHome = () => {
 .success-message {
   font-size: 1.25rem;
   animation: fadeIn 0.5s ease-out 0.2s backwards;
+  color: black;
 }
 
 .info-box {
@@ -273,7 +318,7 @@ const goHome = () => {
   font-size: 1.75rem;
   margin-bottom: 1.5rem;
   font-weight: 600;
-  text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.2);
+  color: black;
 }
 
 .info-list {
@@ -284,6 +329,7 @@ const goHome = () => {
   font-size: 1.05rem;
   list-style-type: none;
   padding-left: 0;
+  color: black;
 }
 
 .info-list li {
@@ -331,6 +377,127 @@ const goHome = () => {
   }
 }
 
+/* Popup Styles */
+.popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease;
+}
+
+.popup-content {
+  background: white;
+  padding: 2.5rem;
+  border-radius: 16px;
+  max-width: 500px;
+  width: 90%;
+  position: relative;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease;
+}
+
+.close-button {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: none;
+  border: none;
+  font-size: 2rem;
+  color: #666;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  transition: color 0.2s ease;
+}
+
+.close-button:hover {
+  color: #333;
+}
+
+.popup-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: rgb(151, 187, 101);
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.downloads-guide {
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.downloads-guide p {
+  color: #333;
+  font-size: 1.1rem;
+  margin-bottom: 0.75rem;
+  font-weight: 500;
+}
+
+.downloads-image {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.install-steps {
+  text-align: left;
+  color: #333;
+  font-size: 1.1rem;
+  line-height: 2;
+  margin-bottom: 2rem;
+  padding-left: 1.5rem;
+}
+
+.install-steps li {
+  margin-bottom: 0.75rem;
+}
+
+.install-steps strong {
+  color: rgb(151, 187, 101);
+  font-weight: 600;
+}
+
+.got-it-button {
+  width: 100%;
+  padding: 1rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  background: rgb(151, 187, 101);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.got-it-button:hover {
+  background: rgb(141, 177, 91);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(151, 187, 101, 0.3);
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @media (max-width: 768px) {
   .title {
     font-size: 2.5rem;
@@ -357,6 +524,22 @@ const goHome = () => {
   }
 
   .info-list {
+    font-size: 1rem;
+  }
+
+  .popup-content {
+    padding: 2rem;
+  }
+
+  .popup-title {
+    font-size: 1.5rem;
+  }
+
+  .downloads-guide p {
+    font-size: 1rem;
+  }
+
+  .install-steps {
     font-size: 1rem;
   }
 }
